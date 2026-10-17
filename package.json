@@ -1,0 +1,18 @@
+{
+  "name": "barathi-files",
+  "version": "1.0.0",
+  "description": "An automated, conflict-free timetable scheduling system for academic departments covering **multiple classes/sections**, a **shared faculty pool**, **strict working windows**, **load limits**, and **automatic break placements**.",
+  "main": "app.py",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "python app.py",
+    "start": "python app.py",
+    "test": "python -m pytest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

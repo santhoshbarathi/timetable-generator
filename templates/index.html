@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFO Institute of Engineering – Department Timetable Scheduler</title>
+  <meta name="description"
+    content="Intelligent, conflict-free multi-class timetable scheduler for INFO Institute of Engineering. Autonomous Institution, Accredited by NAAC & ISO 9001:2015.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+  <!-- ======================================================================
+       COLLEGE HEADER — Top utility bar + Main branding band
+       NOTE ON ASSETS: Place the following image files in /static/images/:
+         • info-logo.png          — INFO Institute logo (white or transparent bg)
+         • logo-aicte.png         — AICTE logo
+         • logo-anna-university.png — Anna University logo
+         • logo-iic.png           — Innovation Council (Ministry of Education) logo
+         • logo-naac.png          — NAAC logo
+  ======================================================================= -->
+
+  <!-- 1. Top utility bar: dark gray, TNEA code + accreditation text + CTA buttons -->
+  <div class="college-topbar">
+    <div class="college-topbar-inner container">
+      <div class="college-topbar-left">
+        <span class="topbar-tnea">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            style="display:inline;vertical-align:-2px;margin-right:4px">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+          TNEA Counselling Code: <strong>2732</strong>
+        </span>
+        <span class="topbar-divider">|</span>
+        <span class="topbar-accred">Accredited by <strong>NAAC</strong> &amp; <strong>ISO 9001:2015</strong>
+          Certified</span>
+      </div>
+      <div class="college-topbar-right">
+        <a href="#" class="topbar-btn topbar-btn-nirf" aria-label="NIRF Ranking">NIRF</a>
+        <a href="#" class="topbar-btn topbar-btn-admission" aria-label="Online Admission Portal">ONLINE ADMISSION</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Main branding band: deep blue, college logo + name + accreditation marks -->
+  <div class="college-brandband">
+    <div class="college-brandband-inner container">
+      <!-- Left: logo + name block -->
+      <div class="college-brand-left">
+        <div class="college-logo-wrap">
+          <img src="/static/images/info-logo.png" 
+               alt="INFO Institute of Engineering logo" 
+               class="college-logo preserve-colors"
+               onerror="this.onerror=null; this.src='/static/images/info-logo.png';">
+        </div>
+        <div class="college-name-block">
+          <span class="college-name-main">INFO Institute Of Engineering</span>
+          <span class="college-name-sub">
+            (Autonomous Institution)
+            <span class="college-excellence">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"
+                style="display:inline;vertical-align:-2px">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              20 YEARS OF EXCELLENCE
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: accreditation logo strip -->
+      <div class="college-accred-strip">
+        <div class="accred-badge-wrap" title="AICTE Approved">
+          <img src="/static/images/logo-aicte.png" alt="AICTE Approved" class="accred-logo preserve-colors"
+            onerror="this.outerHTML='<span class=\'accred-text-fallback\'>AICTE</span>'">
+        </div>
+        <div class="accred-badge-wrap" title="Anna University Affiliated">
+          <img src="/static/images/logo-anna-university.png" alt="Anna University Affiliated" class="accred-logo preserve-colors"
+            onerror="this.outerHTML='<span class=\'accred-text-fallback\'>Anna Univ</span>'">
+        </div>
+        <div class="accred-badge-wrap" title="Institution's Innovation Council">
+          <img src="/static/images/logo-iic.png" alt="Innovation Council – Ministry of Education" class="accred-logo preserve-colors"
+            onerror="this.outerHTML='<span class=\'accred-text-fallback\'>IIC</span>'">
+        </div>
+        <div class="accred-badge-wrap" title="NAAC Accredited">
+          <img src="/static/images/logo-naac.png" alt="NAAC Accredited" class="accred-logo preserve-colors"
+            onerror="this.outerHTML='<span class=\'accred-text-fallback\'>NAAC</span>'">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       SCHEDULER HEADER — sticky app bar (retains original functionality)
+  ======================================================================= -->
+  <header class="app-header">
+    <div class="header-content container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Timetable Scheduler</h1>
+        </div>
+        <div class="header-badges">
+          <div class="status-badge" id="conflict-badge" title="Real-time conflict status">
+            <span class="pulse-dot"></span>
+            <span id="conflict-badge-text">0 Conflicts • Verified</span>
+          </div>
+          <button id="btn-quick-regenerate" class="btn btn-primary btn-sm" onclick="App.regenerateTimetable()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" class="spin-icon">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span>Regenerate Timetable</span>
+          </button>
+        </div>
+      </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container main-content">
+
+    <!-- Tab Navigation -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" role="tab" data-tab="tab-timetable" onclick="App.switchTab('tab-timetable')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
+        <span>Timetable Matrix</span>
+      </button>
+      <button class="tab-btn" role="tab" data-tab="tab-faculty" onclick="App.switchTab('tab-faculty')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span>Faculty Pool (<span id="faculty-tab-count">0</span>)</span>
+      </button>
+      <button class="tab-btn" role="tab" data-tab="tab-subjects" onclick="App.switchTab('tab-subjects')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+        <span>Classes & Subjects</span>
+      </button>
+      <button class="tab-btn" role="tab" data-tab="tab-diagnostics" onclick="App.switchTab('tab-diagnostics')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20V10M18 20V4M6 20v-4" />
+        </svg>
+        <span>Rules & Diagnostics</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: TIMETABLE VIEW -->
+    <section id="tab-timetable" class="tab-pane active">
+      <!-- Timetable Controls Bar -->
+      <div class="control-card">
+        <div class="control-left">
+          <span class="form-label mb-0" style="font-weight: 600;">Display View:</span>
+          <div class="view-mode-bar" role="group" aria-label="Timetable display mode">
+            <button type="button" class="view-mode-btn active" id="btn-view-dual" onclick="App.setViewMode('dual')"
+              title="Display 2 timetables simultaneously on the same page">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="2" y="3" width="9" height="18" rx="2" />
+                <rect x="13" y="3" width="9" height="18" rx="2" />
+              </svg>
+              <span>Dual View (2 Timetables)</span>
+            </button>
+            <button type="button" class="view-mode-btn" id="btn-view-single" onclick="App.setViewMode('single')"
+              title="Display single timetable">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+              </svg>
+              <span>Single View</span>
+            </button>
+            <button type="button" class="view-mode-btn" id="btn-view-all" onclick="App.setViewMode('all')"
+              title="Display all department class timetables">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              <span>All Classes</span>
+            </button>
+          </div>
+
+          <!-- Dual Layout Toggle (Stacked vs Side-by-Side) -->
+          <div class="dual-layout-toggle" id="dual-layout-toggle">
+            <span class="text-muted" style="font-size: 0.8rem; margin-left: 0.5rem;">Layout:</span>
+            <div class="view-mode-bar">
+              <button type="button" class="view-mode-btn active" id="btn-layout-stacked"
+                onclick="App.setDualLayout('stacked')" title="Stacked vertical view (comfortable full-width reading)">
+                Stacked
+              </button>
+              <button type="button" class="view-mode-btn" id="btn-layout-split" onclick="App.setDualLayout('split')"
+                title="Side-by-side split comparison">
+                Side-by-Side
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-right">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-toggle-fit" onclick="App.toggleFitToScreen()" title="Toggle full-width fit to screen view">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
+            <span id="btn-fit-text">Fit to Screen</span>
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="window.print()" title="Print or Save PDF">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            <span>Print View</span>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="App.regenerateTimetable()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span>Regenerate Now</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Schedule Legend Banner -->
+      <div class="legend-bar" role="region" aria-label="Timetable color and pattern legend">
+        <div class="legend-item">
+          <span class="legend-swatch full-time" aria-hidden="true">FT</span>
+          <span>Full-Time Faculty <span class="legend-subtext">(09:00 - 16:45)</span></span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch part-time" aria-hidden="true">PT</span>
+          <span>Part-Time Faculty <span class="legend-subtext">(09:00 - 12:30 Only)</span></span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch lunch" aria-hidden="true">🍱</span>
+          <span>Fixed Lunch Break <span class="legend-subtext">(12:35 - 01:15)</span></span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch short-break" aria-hidden="true">☕</span>
+          <span>Auto Short Breaks <span class="legend-subtext">(10:40 & 14:45)</span></span>
+        </div>
+      </div>
+
+      <!-- Timetables Container (holds 1, 2, or All Timetable Cards) -->
+      <div id="timetables-container" class="timetables-container">
+        <!-- Dynamically rendered via App.renderTimetable() -->
+      </div>
+    </section>
+
+    <!-- TAB 2: FACULTY MANAGEMENT -->
+    <section id="tab-faculty" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Faculty Management</h2>
+          <p class="text-muted">Manage full-time and part-time instructors with strict operating hours and weekly load
+            ceilings.</p>
+        </div>
+        <button class="btn btn-primary" onclick="App.openAddFacultyModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Add Faculty Member</span>
+        </button>
+      </div>
+
+      <div class="card table-card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Faculty Name</th>
+                <th>Department</th>
+                <th>Work Type</th>
+                <th>Allowed Window</th>
+                <th>Weekly Load / Capacity</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="faculty-table-body">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CLASSES & SUBJECTS MANAGEMENT -->
+    <section id="tab-subjects" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Classes & Subjects Management</h2>
+          <p class="text-muted">Configure classes and subjects with designated weekly periods (each subject gets exactly
+            1 period per day).</p>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-outline" onclick="App.openAddClassModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>New Class</span>
+          </button>
+          <button class="btn btn-primary" onclick="App.openAddSubjectModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>New Subject</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Classes Cards Grid -->
+      <div id="classes-list-container" class="classes-grid">
+        <!-- Populated via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: RULES & DIAGNOSTICS -->
+    <section id="tab-diagnostics" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Scheduling Rules & Verification Diagnostics</h2>
+          <p class="text-muted">Formal verification that all college constraints and scheduling invariants are strictly
+            satisfied.</p>
+        </div>
+      </div>
+
+      <div class="grid-2-cols">
+        <!-- Constraints Checklist Card -->
+        <div class="card">
+          <h3 class="card-title">Enforced Scheduling Invariants</h3>
+          <ul class="verification-list">
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Single Booking Invariant:</strong>
+                <p>No faculty member is assigned to two different classes in the same period.</p>
+              </div>
+            </li>
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Fixed Lunch Break (12:30 PM - 01:05 PM):</strong>
+                <p>35-minute midday break occurs consistently after Period 4 across all classes.</p>
+              </div>
+            </li>
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Automatic Short Break Placement:</strong>
+                <p>Morning break placed automatically after Period 2; afternoon tea break after Period 6.</p>
+              </div>
+            </li>
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Part-Time Fixed Half-Day Window:</strong>
+                <p>Part-time faculty only scheduled in Periods 1–4 (09:00 - 12:30). Strict prohibition against afternoon
+                  scheduling.</p>
+              </div>
+            </li>
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Daily Subject Frequency Constraint:</strong>
+                <p>Each subject receives exactly 1 period per class per day (no same-day duplicates).</p>
+              </div>
+            </li>
+            <li class="verified">
+              <span class="icon">✓</span>
+              <div>
+                <strong>Weekly Subject Target Honor:</strong>
+                <p>Every subject's configured weekly periods are exactly matched in the generated timetable.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Working Windows & Constants Card -->
+        <div class="card">
+          <h3 class="card-title">Configured System Constants</h3>
+          <table class="specs-table">
+            <tr>
+              <th>College Operating Hours</th>
+              <td><code>09:00 AM - 04:45 PM</code> (465 minutes)</td>
+            </tr>
+            <tr>
+              <th>Daily Periods</th>
+              <td><code>8 Periods</code> (50 minutes each)</td>
+            </tr>
+            <tr>
+              <th>Fixed Lunch Break</th>
+              <td><code>12:30 PM - 01:05 PM</code> (Constant: <code>LUNCH_BREAK_START</code>)</td>
+            </tr>
+            <tr>
+              <th>Part-Time Window</th>
+              <td><code>09:00 AM - 12:30 PM</code> (Periods 1 to 4)</td>
+            </tr>
+            <tr>
+              <th>Default Part-Time Load</th>
+              <td><code>12 periods / week</code> (Customizable per faculty)</td>
+            </tr>
+            <tr>
+              <th>Full-Time Max Daily Load</th>
+              <td><code>8 periods / day</code></td>
+            </tr>
+            <tr>
+              <th>Auto-Regeneration</th>
+              <td>Active on all Faculty & Subject modifications</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT FACULTY -->
+  <div id="modal-faculty" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-faculty-title">Add Faculty Member</h3>
+        <button class="btn-close" onclick="App.closeModals()">&times;</button>
+      </div>
+      <form id="form-faculty" onsubmit="App.saveFaculty(event)">
+        <input type="hidden" id="faculty-id">
+        <div class="form-group">
+          <label for="faculty-name" class="form-label">Full Name *</label>
+          <input type="text" id="faculty-name" class="form-input" placeholder="e.g. Dr. Alan Turing" required>
+        </div>
+        <div class="form-group">
+          <label for="faculty-dept" class="form-label">Department *</label>
+          <input type="text" id="faculty-dept" class="form-input" placeholder="e.g. Computer Science" required>
+        </div>
+        <div class="form-group">
+          <label for="faculty-work-type" class="form-label">Work Type *</label>
+          <select id="faculty-work-type" class="form-select" onchange="App.onFacultyWorkTypeChange()" required>
+            <option value="full_time">Full-Time (09:00 AM - 04:45 PM, All 8 Periods)</option>
+            <option value="part_time">Part-Time (09:00 AM - 12:30 PM, Periods 1-4 Only)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="faculty-weekly-limit" class="form-label">
+            Weekly Period Limit *
+            <small class="text-muted" id="faculty-limit-help">(Default: 40 for Full-Time, 12 for Part-Time)</small>
+          </label>
+          <input type="number" id="faculty-weekly-limit" class="form-input" min="1" max="40" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-faculty">Save Faculty</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT SUBJECT -->
+  <div id="modal-subject" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-subject-title">Add Subject</h3>
+        <button class="btn-close" onclick="App.closeModals()">&times;</button>
+      </div>
+      <form id="form-subject" onsubmit="App.saveSubject(event)">
+        <input type="hidden" id="subject-id">
+        <div class="form-group">
+          <label for="subject-class-id" class="form-label">Class / Section *</label>
+          <select id="subject-class-id" class="form-select" required>
+            <!-- Populated via JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="subject-name" class="form-label">Subject Name *</label>
+          <input type="text" id="subject-name" class="form-input" placeholder="e.g. Data Structures & Algorithms"
+            required>
+        </div>
+        <div class="form-group">
+          <label for="subject-code" class="form-label">Subject Code *</label>
+          <input type="text" id="subject-code" class="form-input" placeholder="e.g. CS201" required>
+        </div>
+        <div class="form-group">
+          <label for="subject-periods-per-week" class="form-label">
+            Configured Periods Per Week * (1 to 5)
+            <small class="text-muted">(Max 1 period per day across 5 days)</small>
+          </label>
+          <input type="number" id="subject-periods-per-week" class="form-input" min="1" max="5" value="4" required>
+        </div>
+        <div class="form-group">
+          <label for="subject-faculty-id" class="form-label">Assigned Faculty (Optional)</label>
+          <select id="subject-faculty-id" class="form-select">
+            <option value="">-- Dynamic Pool Assignment (Any eligible faculty) --</option>
+            <!-- Populated via JS -->
+          </select>
+          <small class="text-muted">Part-time faculty may teach any subject within Periods 1–4.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-subject">Save Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CLASS -->
+  <div id="modal-class" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Create New Class / Section</h3>
+        <button class="btn-close" onclick="App.closeModals()">&times;</button>
+      </div>
+      <form id="form-class" onsubmit="App.saveClass(event)">
+        <div class="form-group">
+          <label for="class-name" class="form-label">Class Name *</label>
+          <input type="text" id="class-name" class="form-input" placeholder="e.g. Computer Science - 3rd Year (Sec B)"
+            required>
+        </div>
+        <div class="form-group">
+          <label for="class-code" class="form-label">Class Code *</label>
+          <input type="text" id="class-code" class="form-input" placeholder="e.g. CSE-3B" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Class</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript -->
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+Place these image files in this directory:
+- info-logo.png
+- logo-aicte.png
+- logo-anna-university.png
+- logo-iic.png
+- logo-naac.png
