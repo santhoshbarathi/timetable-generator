@@ -27,13 +27,31 @@
           style="height:38px;width:auto;object-fit:contain;border-radius:4px;"
           onerror="this.onerror=null;this.src='/static/images/info-logo.png'">
         <div>
-          <div class="saas-logo-title" style="font-size: 16.5px; font-weight: 700; line-height: 1.2; color: #0f172a;">INFO
+          <div class="saas-logo-title" style="font-size: 16.5px; font-weight: 700; line-height: 1.2; color: #0f172a;">
+            INFO
             Institute of Engineering</div>
-          <div style="font-size: 11.5px; color: #64748b; font-weight: 500; margin-top: 1px;">Autonomous Institution · Affiliated to Anna University · Approved by AICTE</div>
+          <div style="font-size: 11.5px; color: #64748b; font-weight: 500; margin-top: 1px;">Autonomous Institution ·
+            Affiliated to Anna University · Approved by AICTE</div>
         </div>
       </div>
     </div>
     <div class="saas-topbar-right">
+      <!-- Auth user chip (shown when logged in) -->
+      <div id="auth-user-chip" class="auth-user-chip" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span id="auth-user-email" class="auth-user-email"></span>
+        <button id="btn-logout" class="btn-logout" onclick="App.logout()" title="Logout">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Logout
+        </button>
+      </div>
       <div class="status-badge" id="conflict-badge" title="Real-time conflict status" style="margin-right: 8px;">
         <span class="pulse-dot"></span>
         <span id="conflict-badge-text">0 Conflicts • Verified</span>
@@ -46,17 +64,169 @@
         </svg>
         <span>Regenerate</span>
       </button>
-      <div class="saas-avatar" title="User Profile">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
+      <!-- User Profile Dropdown Button -->
+      <div class="user-profile-wrapper" style="position:relative;display:inline-block;">
+        <button id="btn-user-avatar" class="saas-avatar" onclick="App.toggleProfileDropdown(event)"
+          title="Account & Profile" aria-label="User Profile" aria-haspopup="true" aria-expanded="false" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span class="avatar-status-badge" title="Active"></span>
+        </button>
+
+        <!-- User Profile Dropdown Menu -->
+        <div id="user-profile-dropdown" class="user-profile-dropdown" style="display:none;">
+          <div class="profile-dropdown-header">
+            <div class="profile-avatar-large">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="profile-dropdown-user-info">
+              <div id="profile-dropdown-name" class="profile-dropdown-name">Staff Coordinator</div>
+              <div id="profile-dropdown-email" class="profile-dropdown-email">staff@info.ac.in</div>
+              <div class="profile-role-tag">● Authenticated</div>
+            </div>
+          </div>
+
+          <div class="profile-dropdown-divider"></div>
+
+          <div class="profile-dropdown-menu">
+            <button type="button" class="profile-menu-item" onclick="App.openProfileModal(); App.toggleProfileDropdown(false);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Account & Profile Details</span>
+            </button>
+            <button type="button" class="profile-menu-item" onclick="App.switchTab('tab-timetable'); App.toggleProfileDropdown(false);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>View Master Timetable</span>
+            </button>
+            <button type="button" class="profile-menu-item" onclick="App.switchTab('tab-faculty'); App.toggleProfileDropdown(false);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>Faculty Directory</span>
+            </button>
+            <button type="button" class="profile-menu-item" onclick="App.switchTab('tab-exam-seating'); App.toggleProfileDropdown(false);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>Exam Seating Allocations</span>
+            </button>
+          </div>
+
+          <div class="profile-dropdown-divider"></div>
+
+          <div class="profile-dropdown-footer">
+            <button type="button" class="profile-logout-btn" onclick="App.logout(); App.toggleProfileDropdown(false);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- SaaS Two-Column Layout -->
+  <!-- ===================================================================
+       AUTH CONTAINER — Shown when user is not logged in
+       =================================================================== -->
+  <div id="auth-container" style="display:none;">
+    <div class="auth-backdrop"></div>
+    <div class="auth-card-wrapper">
+      <div class="auth-card">
+        <!-- Logo + Brand -->
+        <div class="auth-brand">
+          <img src="/static/images/info-logo-transparent.png" alt="INFO Logo" class="auth-brand-logo"
+               onerror="this.onerror=null;this.src='/static/images/info-logo.png'">
+          <div>
+            <div class="auth-brand-name">INFO Institute of Engineering</div>
+            <div class="auth-brand-sub">Timetable Scheduler — Staff Portal</div>
+          </div>
+        </div>
+
+        <!-- Mode heading -->
+        <h2 class="auth-heading" id="auth-heading">Welcome back</h2>
+        <p class="auth-subheading" id="auth-subheading">Sign in to manage schedules and timetables</p>
+
+        <!-- Alert banner -->
+        <div id="auth-error" class="auth-alert auth-alert-error" style="display:none;"></div>
+        <div id="auth-success" class="auth-alert auth-alert-success" style="display:none;"></div>
+
+        <!-- Form -->
+        <form id="auth-form" onsubmit="App.handleAuthSubmit(event)" autocomplete="on" novalidate>
+          <div class="auth-field">
+            <label class="auth-label" for="auth-email">Email address</label>
+            <div class="auth-input-wrapper">
+              <svg class="auth-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <input type="email" id="auth-email" class="auth-input" placeholder="you@example.com"
+                     autocomplete="email" required>
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="auth-password">Password</label>
+            <div class="auth-input-wrapper">
+              <svg class="auth-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" id="auth-password" class="auth-input" placeholder="Min. 6 characters"
+                     autocomplete="current-password" required minlength="6">
+              <button type="button" class="auth-eye-btn" onclick="App.togglePasswordVisibility()" tabindex="-1" title="Show/hide password">
+                <svg id="auth-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
+            <span id="auth-submit-label">Sign In</span>
+            <span id="auth-submit-spinner" class="auth-spinner" style="display:none;"></span>
+          </button>
+        </form>
+
+        <!-- Toggle link -->
+        <p class="auth-toggle-text">
+          <span id="auth-toggle-question">Don't have an account?</span>
+          <button id="auth-toggle-btn" class="auth-toggle-link" onclick="App.toggleAuthMode()" type="button">
+            Create one
+          </button>
+        </p>
+
+        <!-- Divider -->
+        <div class="auth-divider"><span>INFO Institute of Engineering</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SaaS Two-Column Layout — Main Dashboard (hidden until auth) -->
+  <div id="main-dashboard-container" style="display:none;">
   <div class="saas-layout">
     <!-- Left Navigation Sidebar -->
     <aside class="saas-sidebar">
@@ -92,7 +262,8 @@
         </svg>
         <span>Faculty (<span id="faculty-tab-count">0</span>)</span>
       </button>
-      <button class="saas-nav-item tab-btn" data-tab="tab-faculty-timetable" onclick="App.switchTab('tab-faculty-timetable'); App.renderFacultyTimetable();">
+      <button class="saas-nav-item tab-btn" data-tab="tab-faculty-timetable"
+        onclick="App.switchTab('tab-faculty-timetable'); App.renderFacultyTimetable();">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -103,6 +274,16 @@
         </svg>
         <span>Faculty Timetable</span>
       </button>
+      <button class="saas-nav-item tab-btn" data-tab="exam-seating-tab" onclick="App.switchTab('exam-seating-tab')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <span>📝 Internal Exam Seating</span>
+      </button>
       <button class="saas-nav-item tab-btn" data-tab="tab-diagnostics" onclick="App.switchTab('tab-diagnostics')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"></circle>
@@ -110,7 +291,7 @@
             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
           </path>
         </svg>
-        <span>Settings</span>
+        <span>Rules</span>
       </button>
     </aside>
 
@@ -120,16 +301,32 @@
       <section id="tab-timetable" class="tab-pane active">
         <div class="saas-page-header">
           <div class="saas-page-title-group">
-            <h1>Auto-mated Time Table Scheduler</h1>
+            <h1>Intelligent Time Table Scheduler</h1>
             <p>Your weekly class schedule</p>
           </div>
           <div class="saas-header-actions" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+            <!-- Semester Selector -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12.5px;font-weight:600;color:#64748b;">Semester:</span>
+              <select id="global-semester-select" class="saas-class-select" onchange="App.onSemesterChange(this.value)"
+                title="Select Academic Semester (Semesters 1 to 8 across 4 Years)" style="min-width:140px;font-weight:600;">
+                <option value="all">All Semesters</option>
+                <option value="1">Semester 1 (1st Year)</option>
+                <option value="2">Semester 2 (1st Year)</option>
+                <option value="3" selected>Semester 3 (2nd Year)</option>
+                <option value="4">Semester 4 (2nd Year)</option>
+                <option value="5">Semester 5 (3rd Year)</option>
+                <option value="6">Semester 6 (3rd Year)</option>
+                <option value="7">Semester 7 (4th Year)</option>
+                <option value="8">Semester 8 (4th Year)</option>
+              </select>
+            </div>
+
             <!-- Class Selector 1 (Primary) -->
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="font-size:12.5px;font-weight:600;color:#64748b;">Class:</span>
-              <select id="global-class-select" class="saas-class-select"
-                onchange="App.onClassChange(1, this)" title="Select Class to view"
-                style="min-width:210px;font-weight:600;">
+              <select id="global-class-select" class="saas-class-select" onchange="App.onClassChange(1, this)"
+                title="Select Class to view" style="min-width:210px;font-weight:600;">
                 <!-- Dynamically populated -->
               </select>
             </div>
@@ -137,9 +334,8 @@
             <!-- Class Selector 2 (Dual mode only) -->
             <div id="dual-select-wrapper" style="display:none;align-items:center;gap:6px;">
               <span style="font-size:12.5px;font-weight:600;color:#64748b;">Compare with:</span>
-              <select id="global-class-select-2" class="saas-class-select"
-                onchange="App.onClassChange(2, this)" title="Second Class for Dual comparison"
-                style="min-width:210px;font-weight:600;">
+              <select id="global-class-select-2" class="saas-class-select" onchange="App.onClassChange(2, this)"
+                title="Second Class for Dual comparison" style="min-width:210px;font-weight:600;">
                 <!-- Dynamically populated -->
               </select>
             </div>
@@ -147,7 +343,8 @@
             <div style="height:24px;width:1px;background:#e2e8f0;margin:0 2px;"></div>
 
             <!-- View Mode Switcher -->
-            <div class="btn-group view-mode-group" style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;">
+            <div class="btn-group view-mode-group"
+              style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;">
               <button id="btn-view-single" class="btn btn-sm active"
                 style="border:none;border-radius:0;padding:6px 14px;font-size:12.5px;font-weight:600;"
                 onclick="App.setViewMode('single')" title="Clean single class focus view">Single</button>
@@ -171,6 +368,15 @@
             </div>
 
             <div style="height:24px;width:1px;background:#e2e8f0;margin:0 2px;"></div>
+
+            <!-- Swap Mode Button -->
+            <button id="btn-toggle-swap-mode" class="btn btn-sm btn-swap-mode"
+              onclick="App.toggleSwapMode()" title="Toggle interactive slot swap mode with conflict checking">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"></path>
+              </svg>
+              <span id="btn-swap-mode-text">🔃 Swap Mode</span>
+            </button>
 
             <!-- Print Button -->
             <button id="btn-print-timetable" class="btn btn-sm"
@@ -197,37 +403,61 @@
                 <span>Export</span>
                 <span style="font-size:9px;color:#64748b;">▼</span>
               </button>
-              <div id="timetable-download-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.1);min-width:245px;z-index:999;padding:6px;">
-                <a href="javascript:void(0)" onclick="App.downloadTimetableCsv(); App.toggleDownloadDropdown(false);"
-                  style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
+              <div id="timetable-download-dropdown"
+                style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.1);min-width:260px;z-index:999;padding:6px;">
+                <div style="padding:4px 10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Excel Format (.xlsx)</div>
+                <a href="javascript:void(0)" onclick="App.downloadTimetableExcel(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
                   onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                  <span>📄</span>
-                  <span>Download Current Class (CSV)</span>
+                  <span>📊</span>
+                  <span>Download Current Class (Excel)</span>
                 </a>
-                <a href="javascript:void(0)" onclick="App.downloadAllTimetablesCsv(); App.toggleDownloadDropdown(false);"
-                  style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
+                <a href="javascript:void(0)" onclick="App.downloadAllTimetablesExcel(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
                   onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                  <span>📑</span>
-                  <span>Download All Classes (CSV)</span>
-                </a>
-                <a href="javascript:void(0)" onclick="App.downloadTimetableJson(); App.toggleDownloadDropdown(false);"
-                  style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
-                  onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                  <span>📦</span>
-                  <span>Download Complete Data (JSON)</span>
+                  <span>📗</span>
+                  <span>Download All Classes (Excel)</span>
                 </a>
                 <hr style="margin:4px 0;border:none;border-top:1px solid #e2e8f0;">
+                <div style="padding:4px 10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">PDF Document (.pdf)</div>
+                <a href="javascript:void(0)" onclick="App.downloadTimetablePdf(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#dc2626;text-decoration:none;border-radius:6px;font-weight:600;"
+                  onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                  <span>📕</span>
+                  <span>Download Current Class (PDF)</span>
+                </a>
+                <a href="javascript:void(0)" onclick="App.downloadAllTimetablesPdf(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#dc2626;text-decoration:none;border-radius:6px;font-weight:600;"
+                  onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                  <span>📚</span>
+                  <span>Download All Classes (PDF)</span>
+                </a>
+                <hr style="margin:4px 0;border:none;border-top:1px solid #e2e8f0;">
+                <div style="padding:4px 10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Other Formats</div>
+                <a href="javascript:void(0)" onclick="App.downloadTimetableCsv(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
+                  onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                  <span>📄</span>
+                  <span>Download CSV</span>
+                </a>
+                <a href="javascript:void(0)" onclick="App.downloadTimetableJson(); App.toggleDownloadDropdown(false);"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#1e293b;text-decoration:none;border-radius:6px;font-weight:500;"
+                  onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                  <span>📦</span>
+                  <span>Download JSON</span>
+                </a>
                 <a href="javascript:void(0)" onclick="App.printTimetable(); App.toggleDownloadDropdown(false);"
-                  style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;color:#2563eb;text-decoration:none;border-radius:6px;font-weight:600;"
+                  style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:#2563eb;text-decoration:none;border-radius:6px;font-weight:600;"
                   onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">
                   <span>🖨️</span>
-                  <span>Print / Save as PDF</span>
+                  <span>Print View</span>
                 </a>
               </div>
             </div>
 
             <!-- Add Subject Primary CTA -->
-            <button type="button" class="saas-btn-primary" onclick="App.openModal('modal-subject')" style="margin-left:4px;">
+            <button type="button" class="saas-btn-primary" onclick="App.openModal('modal-subject')"
+              style="margin-left:4px;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -439,8 +669,7 @@
           </div>
           <div class="saas-header-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <select id="faculty-timetable-select" class="saas-class-select"
-                    onchange="App.onFacultyTimetableChange(this)"
-                    title="Choose Faculty Member">
+              onchange="App.onFacultyTimetableChange(this)" title="Choose Faculty Member">
               <option value="">— Select Faculty —</option>
             </select>
             <button id="btn-print-faculty-timetable" class="btn btn-sm"
@@ -453,6 +682,18 @@
               </svg>
               <span>Print</span>
             </button>
+            <button id="btn-download-faculty-excel" class="btn btn-sm"
+              style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#16a34a;cursor:pointer;"
+              onclick="App.downloadFacultyTimetableExcel()" title="Download Faculty Schedule as Excel (.xlsx)">
+              <span>📊</span>
+              <span>Excel</span>
+            </button>
+            <button id="btn-download-faculty-pdf" class="btn btn-sm"
+              style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#dc2626;cursor:pointer;"
+              onclick="App.downloadFacultyTimetablePdf()" title="Download Faculty Schedule as PDF (.pdf)">
+              <span>📕</span>
+              <span>PDF</span>
+            </button>
             <button id="btn-download-faculty-timetable" class="btn btn-sm"
               style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0f172a;cursor:pointer;"
               onclick="App.downloadFacultyTimetableCsv()" title="Download Faculty Schedule as CSV">
@@ -461,15 +702,20 @@
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              <span>Download CSV</span>
+              <span>CSV</span>
             </button>
           </div>
         </div>
 
         <!-- Info strip shown for part-time faculty -->
         <div id="faculty-timetable-info" style="display:none; margin-bottom:14px;">
-          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:10px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div
+            style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
             <span id="faculty-timetable-info-text">Part-time faculty · Periods 1–4 only (09:00–12:30)</span>
           </div>
         </div>
@@ -478,6 +724,57 @@
         <div id="faculty-timetable-container">
           <div class="card" style="text-align:center;padding:3rem;color:var(--slate-500,#64748b);">
             Select a faculty member above to view their weekly timetable.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Internal Exam Seating Tab ────────────────────────────────── -->
+      <section id="exam-seating-tab" class="tab-pane">
+        <div class="saas-page-header">
+          <div class="saas-page-title-group">
+            <h1>Internal Examination Hall Seating Arrangement</h1>
+            <p>Comprehensive hall-wise student roll number allocation and exam session details</p>
+          </div>
+          <div class="saas-header-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button id="btn-print-exam-seating" class="btn btn-sm"
+              style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0f172a;cursor:pointer;"
+              onclick="window.print()" title="Print Seating Chart">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>🖨️ Print Seating Chart</span>
+            </button>
+            <button id="btn-refresh-exam-seating" class="btn btn-sm"
+              style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0f172a;cursor:pointer;"
+              onclick="App.loadExamSeating()" title="Refresh allocations from Supabase">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="min-width:110px;">Hall No</th>
+                  <th style="min-width:140px;">Date & Session</th>
+                  <th style="min-width:200px;">Subject</th>
+                  <th style="min-width:180px;">Year, Degree & Dept</th>
+                  <th style="min-width:200px;">Roll Number Range</th>
+                  <th style="min-width:120px;text-align:center;">Total Students</th>
+                </tr>
+              </thead>
+              <tbody id="exam-seating-tbody">
+                <!-- Dynamically populated via loadExamSeating() -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -500,7 +797,17 @@
         </div>
         <div class="form-group">
           <label for="faculty-dept" class="form-label">Department *</label>
-          <input type="text" id="faculty-dept" class="form-input" placeholder="e.g. Computer Science" required>
+          <select id="faculty-dept" class="form-select" required>
+            <option value="">— Select Department —</option>
+            <option value="AI & DS">Artificial Intelligence & Data Science (AI & DS)</option>
+            <option value="IT">Information Technology (IT)</option>
+            <option value="CSE">Computer Science & Engineering (CSE)</option>
+            <option value="Science and Humanities">Science and Humanities (S&H)</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Management Studies">Management Studies / MBA</option>
+            <option value="Electrical & Renewable">Electrical & Renewable Engineering</option>
+            <option value="Other">Other / General</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="faculty-work-type" class="form-label">Work Type *</label>
@@ -588,6 +895,19 @@
           <label for="class-code" class="form-label">Class Code *</label>
           <input type="text" id="class-code" class="form-input" placeholder="e.g. CSE-3B" required>
         </div>
+        <div class="form-group">
+          <label for="class-semester" class="form-label">Semester *</label>
+          <select id="class-semester" class="form-select" required>
+            <option value="1">Semester 1 (1st Year)</option>
+            <option value="2">Semester 2 (1st Year)</option>
+            <option value="3" selected>Semester 3 (2nd Year)</option>
+            <option value="4">Semester 4 (2nd Year)</option>
+            <option value="5">Semester 5 (3rd Year)</option>
+            <option value="6">Semester 6 (3rd Year)</option>
+            <option value="7">Semester 7 (4th Year)</option>
+            <option value="8">Semester 8 (4th Year)</option>
+          </select>
+        </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
           <button type="submit" class="btn btn-primary">Create Class</button>
@@ -595,6 +915,65 @@
       </form>
     </div>
   </div>
+
+  <!-- MODAL: ACCOUNT & PROFILE DETAILS -->
+  <div id="modal-profile" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="profile-avatar-large" style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:#eff6ff;border-radius:50%;color:#2563eb;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Account & Profile Details</h3>
+            <p style="margin:2px 0 0;font-size:12px;color:#64748b;">INFO Institute of Engineering</p>
+          </div>
+        </div>
+        <button class="btn-close" onclick="App.closeModals()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="profile-detail-card" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Current User</div>
+            <div id="modal-profile-email" style="font-weight:700;color:#0f172a;font-size:14px;word-break:break-all;">—</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+              <span class="badge" style="background:#dcfce7;color:#15803d;font-weight:700;font-size:11px;">● Active Session</span>
+              <span class="badge" style="background:#e0e7ff;color:#3730a3;font-weight:600;font-size:11px;">Schedule Coordinator</span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:600;">Total Classes</div>
+              <div id="modal-profile-classes-count" style="font-size:18px;font-weight:800;color:#2563eb;margin-top:2px;">—</div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:11px;color:#64748b;font-weight:600;">Faculty Members</div>
+              <div id="modal-profile-faculty-count" style="font-size:18px;font-weight:800;color:#10b981;margin-top:2px;">—</div>
+            </div>
+          </div>
+
+          <div style="font-size:12.5px;color:#475569;line-height:1.5;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;">
+            🏛️ <strong>Institution:</strong> INFO Institute of Engineering (Autonomous)<br>
+            📅 <strong>Academic Coverage:</strong> 8 Semesters across 4 Academic Years<br>
+            ⚡ <strong>Status:</strong> All conflict detection &amp; slot swap systems online
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#f8fafc;border-top:1px solid #e2e8f0;border-radius:0 0 12px 12px;">
+        <button type="button" class="btn btn-danger-outline btn-sm" onclick="App.closeModals(); App.logout();">
+          🚪 Logout
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="App.closeModals()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /.saas-layout -->
+  </div><!-- /#main-dashboard-container -->
 
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>

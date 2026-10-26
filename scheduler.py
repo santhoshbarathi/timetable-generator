@@ -375,13 +375,20 @@ class TimetableScheduler:
 
             # Insert new entries
             insert_query = """
-            INSERT INTO timetable_entries (class_id, day, period_num, subject_id, faculty_id)
-            VALUES (?, ?, ?, ?, ?);
+            INSERT INTO timetable_entries (class_id, semester, day, period_num, subject_id, faculty_id)
+            VALUES (?, ?, ?, ?, ?, ?);
             """
             cursor.executemany(
                 insert_query,
                 [
-                    (e["class_id"], e["day"], e["period_num"], e["subject_id"], e["faculty_id"])
+                    (
+                        e["class_id"],
+                        classes_map.get(e["class_id"], {}).get("semester", 1),
+                        e["day"],
+                        e["period_num"],
+                        e["subject_id"],
+                        e["faculty_id"]
+                    )
                     for e in entries
                 ],
             )

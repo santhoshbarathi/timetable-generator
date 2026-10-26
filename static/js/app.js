@@ -14,13 +14,26 @@ const App = {
   selectedClassId1: null,
   selectedClassId2: null,
   selectedFacultyId: null,   // for Faculty Timetable tab
+  selectedSemester: "all",   // "all" | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
   viewMode: "single", // "single" | "dual" | "all"
   dualLayout: "stacked", // "stacked" | "split"
   isFitToScreen: true, // Default to full-width fit to screen
+  // Swap Mode State
+  isSwapMode: false,
+  selectedSourceSlot: null, // { classId, entryId, day, periodNum, subjectName, facultyName, element }
+  // Auth state
+  authMode: "login", // "login" | "signup"
   // -------------------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------------------
   async init() {
+    // Check auth state first — if not logged in show the auth card
+    const authed = this.checkAuthStatus();
+    if (!authed) return; // Dashboard init deferred until after login
+    await this.initDashboard();
+  },
+
+  async initDashboard() {
     try {
       await this.loadConfig();
       await this.refreshAllData();
@@ -62,38 +75,63 @@ const App = {
     const facCountEl = document.getElementById("faculty-tab-count");
     if (facCountEl) facCountEl.textContent = this.faculty.length;
 
-    // Populate global class selectors in header (selector 1 and 2)
-    const globalSelect = document.getElementById("global-class-select");
-    if (globalSelect && this.classes.length > 0) {
-      globalSelect.innerHTML = this.classes
-        .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId1 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`)
-        .join("");
-    }
-    const globalSelect2 = document.getElementById("global-class-select-2");
-    if (globalSelect2 && this.classes.length > 0) {
-      globalSelect2.innerHTML = this.classes
-        .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId2 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`)
-        .join("");
-      // Show selector-2 only in dual mode
-      globalSelect2.style.display = this.viewMode === "dual" ? "" : "none";
-    }
+    // Populate class selectors according to selectedSemester
+    this.populateClassSelectors();
+  },
 
-    // Default selected classes for single and dual timetable views
-    if (this.classes.length > 0) {
-      if (!this.selectedClassId1 || !this.classes.some((c) => c.id === this.selectedClassId1)) {
-        this.selectedClassId1 = this.classes[0].id;
+  getFilteredClasses() {
+    if (!this.selectedSemester || this.selectedSemester === "all") {
+      return this.classes;
+    }
+    const targetSem = parseInt(this.selectedSemester, 10);
+    return this.classes.filter((c) => parseInt(c.semester, 10) === targetSem);
+  },
+
+  populateClassSelectors() {
+    const filtered = this.getFilteredClasses();
+    const globalSelect = document.getElementById("global-class-select");
+    const globalSelect2 = document.getElementById("global-class-select-2");
+
+    if (filtered.length > 0) {
+      if (!this.selectedClassId1 || !filtered.some((c) => c.id === this.selectedClassId1)) {
+        this.selectedClassId1 = filtered[0].id;
+        this.selectedClassId = filtered[0].id;
       }
-      if (!this.selectedClassId2 || !this.classes.some((c) => c.id === this.selectedClassId2)) {
-        this.selectedClassId2 = this.classes.length > 1 ? this.classes[1].id : this.classes[0].id;
-      }
-      if (!this.selectedClassId || !this.classes.some((c) => c.id === this.selectedClassId)) {
-        this.selectedClassId = this.classes[0].id;
+      if (!this.selectedClassId2 || !filtered.some((c) => c.id === this.selectedClassId2)) {
+        this.selectedClassId2 = filtered.length > 1 ? filtered[1].id : filtered[0].id;
       }
     } else {
       this.selectedClassId = null;
       this.selectedClassId1 = null;
       this.selectedClassId2 = null;
     }
+
+    if (globalSelect) {
+      if (filtered.length > 0) {
+        globalSelect.innerHTML = filtered
+          .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId1 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)}) [Sem ${c.semester || 1}]</option>`)
+          .join("");
+      } else {
+        globalSelect.innerHTML = `<option value="">— No Classes in this Semester —</option>`;
+      }
+    }
+
+    if (globalSelect2) {
+      if (filtered.length > 0) {
+        globalSelect2.innerHTML = filtered
+          .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId2 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)}) [Sem ${c.semester || 1}]</option>`)
+          .join("");
+      } else {
+        globalSelect2.innerHTML = `<option value="">— No Classes —</option>`;
+      }
+      globalSelect2.style.display = this.viewMode === "dual" ? "" : "none";
+    }
+  },
+
+  onSemesterChange(semValue) {
+    this.selectedSemester = semValue;
+    this.populateClassSelectors();
+    this.renderTimetable();
   },
 
   // -------------------------------------------------------------------------
@@ -106,6 +144,10 @@ const App = {
     document.querySelectorAll(".tab-pane").forEach((pane) => {
       pane.classList.toggle("active", pane.id === tabId);
     });
+
+    if (tabId === "exam-seating-tab") {
+      this.loadExamSeating();
+    }
   },
 
   openModal(modalId) {
@@ -135,6 +177,36 @@ const App = {
     }
   },
 
+  downloadTimetableExcel(classId) {
+    const cid = classId || this.selectedClassId1 || this.selectedClassId || (this.classes[0]?.id);
+    if (!cid) {
+      this.showToast("No class selected to download.", "warning");
+      return;
+    }
+    window.location.href = `/api/export/timetable/excel?class_id=${cid}`;
+    this.showToast("Downloading class timetable Excel (.xlsx)...", "info");
+  },
+
+  downloadAllTimetablesExcel() {
+    window.location.href = `/api/export/timetable/excel?all=true`;
+    this.showToast("Downloading all class timetables Excel (.xlsx)...", "info");
+  },
+
+  downloadTimetablePdf(classId) {
+    const cid = classId || this.selectedClassId1 || this.selectedClassId || (this.classes[0]?.id);
+    if (!cid) {
+      this.showToast("No class selected to download.", "warning");
+      return;
+    }
+    window.location.href = `/api/export/timetable/pdf?class_id=${cid}`;
+    this.showToast("Downloading class timetable PDF (.pdf)...", "info");
+  },
+
+  downloadAllTimetablesPdf() {
+    window.location.href = `/api/export/timetable/pdf?all=true`;
+    this.showToast("Downloading all class timetables PDF (.pdf)...", "info");
+  },
+
   downloadTimetableCsv(classId) {
     const cid = classId || this.selectedClassId1 || this.selectedClassId || (this.classes[0]?.id);
     if (!cid) {
@@ -149,6 +221,26 @@ const App = {
   downloadAllTimetablesCsv() {
     window.location.href = `/api/export/timetable/csv?all=true`;
     this.showToast("Downloading all class timetables CSV...", "info");
+  },
+
+  downloadFacultyTimetableExcel(facultyId) {
+    const fid = facultyId || this.selectedFacultyId;
+    if (!fid) {
+      this.showToast("Please select a faculty member first.", "warning");
+      return;
+    }
+    window.location.href = `/api/export/faculty/excel?faculty_id=${fid}`;
+    this.showToast("Downloading faculty schedule Excel (.xlsx)...", "info");
+  },
+
+  downloadFacultyTimetablePdf(facultyId) {
+    const fid = facultyId || this.selectedFacultyId;
+    if (!fid) {
+      this.showToast("Please select a faculty member first.", "warning");
+      return;
+    }
+    window.location.href = `/api/export/faculty/pdf?faculty_id=${fid}`;
+    this.showToast("Downloading faculty schedule PDF (.pdf)...", "info");
   },
 
   downloadFacultyTimetableCsv(facultyId) {
@@ -285,10 +377,12 @@ const App = {
     // Apply layout class
     container.className = `timetables-container ${this.viewMode === "dual" && this.dualLayout === "split" ? "layout-split" : "layout-stacked"}`;
 
-    if (this.classes.length === 0) {
+    const filteredClasses = this.getFilteredClasses();
+    if (filteredClasses.length === 0) {
+      const semText = this.selectedSemester !== "all" ? ` for Semester ${this.selectedSemester}` : "";
       container.innerHTML = `
         <div class="card" style="text-align: center; padding: 3rem; color: var(--slate-500);">
-          No classes registered yet. Create classes in the "Classes & Subjects" tab.
+          No classes registered${semText}. Select "All Semesters" or create a class in the "Subjects" tab.
         </div>
       `;
       return;
@@ -298,18 +392,18 @@ const App = {
 
     if (this.viewMode === "dual") {
       // Show 2 Timetables on the same page
-      const id1 = this.selectedClassId1 || this.classes[0]?.id;
-      const id2 = this.selectedClassId2 || (this.classes.length > 1 ? this.classes[1].id : this.classes[0].id);
+      const id1 = this.selectedClassId1 || filteredClasses[0]?.id;
+      const id2 = this.selectedClassId2 || (filteredClasses.length > 1 ? filteredClasses[1].id : filteredClasses[0].id);
       cardsHtml += this.buildTimetableCardHtml(id1, "Timetable 1", 1);
       cardsHtml += this.buildTimetableCardHtml(id2, "Timetable 2", 2);
     } else if (this.viewMode === "all") {
-      // Show All classes
-      this.classes.forEach((c, index) => {
+      // Show All classes in current semester filter
+      filteredClasses.forEach((c, index) => {
         cardsHtml += this.buildTimetableCardHtml(c.id, `Class ${index + 1}`, index + 1);
       });
     } else {
       // Single Timetable
-      const id = this.selectedClassId || this.classes[0]?.id;
+      const id = this.selectedClassId || filteredClasses[0]?.id;
       cardsHtml += this.buildTimetableCardHtml(id, "Timetable", 1);
     }
 
@@ -441,7 +535,10 @@ const App = {
         }
 
         if (!slot) {
-          cellsHtml += `<td class="period-cell" style="text-align: center;"><span class="schedule-empty">–</span></td>`;
+          const swapClickEmpty = this.isSwapMode
+            ? `onclick="App.handleSlotClick(null, '${day}', ${period.num}, ${cls.id}, '', this)" style="cursor:crosshair;"`
+            : ``;
+          cellsHtml += `<td class="period-cell" ${swapClickEmpty} style="text-align: center;"><span class="schedule-empty">–</span></td>`;
         } else {
           const colorClass = getColorForSubject(slot.subject_name, slot.subject_code);
           const facultyTooltip = slot.faculty_name ? `Faculty: ${slot.faculty_name}` : "";
@@ -450,8 +547,11 @@ const App = {
           const labBadge = isLabBlock
             ? `<span style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.5px;background:rgba(255,255,255,0.55);color:#1e3a5f;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle;">2hr LAB</span>`
             : ``;
+          const swapClick = this.isSwapMode
+            ? `onclick="App.handleSlotClick(${slot.entry_id || 'null'}, '${day}', ${period.num}, ${cls.id}, '${(slot.subject_name || '').replace(/'/g, '\\&apos;')}', this)" style="cursor:pointer;"`
+            : ``;
           cellsHtml += `
-            <td class="period-cell"${colspanAttr}>
+            <td class="period-cell${this.isSwapMode ? ' slot-swappable' : ''}"${colspanAttr} ${swapClick}>
               <div class="schedule-pill ${colorClass}">
                 <div class="pill-subject" title="${this.escapeHtml(fullTitle)}">${this.escapeHtml(slot.subject_name)}${labBadge}</div>
               </div>
@@ -506,6 +606,7 @@ const App = {
           <div class="timetable-card-title-group">
             <span class="timetable-card-title">${this.escapeHtml(cls.name)}</span>
             <span class="timetable-card-code">${this.escapeHtml(cls.code)}</span>
+            <span style="font-size:11.5px;background:#e0e7ff;color:#3730a3;font-weight:700;padding:2px 9px;border-radius:12px;border:1px solid #c7d2fe;">Semester ${cls.semester || 1}</span>
             <span class="timetable-card-meta">40 Periods · Full-Week Active</span>
             ${slotLabel && this.viewMode === "dual" ? `<span style="font-size:11px;background:#f1f5f9;color:#475569;font-weight:700;padding:2px 8px;border-radius:4px;">${this.escapeHtml(slotLabel)}</span>` : ""}
           </div>
@@ -517,6 +618,14 @@ const App = {
                 <rect x="6" y="14" width="12" height="8"></rect>
               </svg>
               <span>Print</span>
+            </button>
+            <button class="btn btn-sm" onclick="App.downloadTimetableExcel(${cls.id})" title="Export Excel (.xlsx) for this class" style="color:#16a34a;">
+              <span>📊</span>
+              <span>Excel</span>
+            </button>
+            <button class="btn btn-sm" onclick="App.downloadTimetablePdf(${cls.id})" title="Export PDF (.pdf) for this class" style="color:#dc2626;">
+              <span>📕</span>
+              <span>PDF</span>
             </button>
             <button class="btn btn-sm" onclick="App.downloadTimetableCsv(${cls.id})" title="Export CSV for this class">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -859,6 +968,12 @@ const App = {
             <button class="btn" onclick="App.printFacultyTimetable()" title="Print Faculty Timetable">
               🖨️ Print
             </button>
+            <button class="btn" onclick="App.downloadFacultyTimetableExcel(${fac.id})" title="Download Excel (.xlsx)" style="color:#16a34a;">
+              📊 Excel
+            </button>
+            <button class="btn" onclick="App.downloadFacultyTimetablePdf(${fac.id})" title="Download PDF (.pdf)" style="color:#dc2626;">
+              📕 PDF
+            </button>
             <button class="btn" onclick="App.downloadFacultyTimetableCsv(${fac.id})" title="Download CSV">
               📥 CSV
             </button>
@@ -906,7 +1021,7 @@ const App = {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><strong>${this.escapeHtml(f.name)}</strong></td>
-        <td>${this.escapeHtml(f.department)}</td>
+        <td>${this.escapeHtml(f.department || "—")}</td>
         <td>
           <span class="badge ${isPt ? "badge-pt" : "badge-ft"}">
             ${isPt ? "Part-Time" : "Full-Time"}
@@ -953,7 +1068,30 @@ const App = {
     document.getElementById("modal-faculty-title").textContent = "Edit Faculty Member";
     document.getElementById("faculty-id").value = f.id;
     document.getElementById("faculty-name").value = f.name;
-    document.getElementById("faculty-dept").value = f.department;
+
+    const deptSelect = document.getElementById("faculty-dept");
+    const deptVal = f.department || "";
+    // If the department from database isn't in predefined options, dynamically add it
+    if (deptVal) {
+      let found = false;
+      for (let i = 0; i < deptSelect.options.length; i++) {
+        if (deptSelect.options[i].value.toLowerCase() === deptVal.toLowerCase()) {
+          deptSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const opt = document.createElement("option");
+        opt.value = deptVal;
+        opt.textContent = deptVal;
+        deptSelect.appendChild(opt);
+        deptSelect.value = deptVal;
+      }
+    } else {
+      deptSelect.value = "";
+    }
+
     document.getElementById("faculty-work-type").value = f.work_type;
     document.getElementById("faculty-weekly-limit").value = f.weekly_period_limit;
     this.onFacultyWorkTypeChange();
@@ -1091,7 +1229,10 @@ const App = {
       card.innerHTML = `
         <div class="class-card-header">
           <div>
-            <div class="class-title">${this.escapeHtml(c.name)}</div>
+            <div class="class-title" style="display:flex;align-items:center;gap:8px;">
+              <span>${this.escapeHtml(c.name)}</span>
+              <span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:11px;">Sem ${c.semester || 1}</span>
+            </div>
             <div class="text-muted" style="font-size: 0.8rem;">${totalPeriods} / 40 periods filled per week</div>
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1110,6 +1251,8 @@ const App = {
   openAddClassModal() {
     document.getElementById("class-name").value = "";
     document.getElementById("class-code").value = "";
+    const semEl = document.getElementById("class-semester");
+    if (semEl) semEl.value = "1";
     document.getElementById("modal-class").style.display = "flex";
   },
 
@@ -1117,12 +1260,13 @@ const App = {
     event.preventDefault();
     const name = document.getElementById("class-name").value.trim();
     const code = document.getElementById("class-code").value.trim();
+    const semester = parseInt(document.getElementById("class-semester")?.value || "1", 10);
 
     try {
       const res = await fetch("/api/classes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, code }),
+        body: JSON.stringify({ name, code, semester }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1315,6 +1459,91 @@ const App = {
     }, 4500);
   },
 
+  async loadExamSeating() {
+    const tbody = document.getElementById("exam-seating-tbody");
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;padding:2rem;color:#64748b;">
+          <div style="display:inline-flex;align-items:center;gap:8px;">
+            <span class="spin-icon">⏳</span> Loading examination seating chart from Supabase...
+          </div>
+        </td>
+      </tr>
+    `;
+
+    try {
+      const res = await fetch("/api/exam/allocations");
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+      const data = await res.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;padding:2.5rem;color:#64748b;">
+              No examination seating allocations found. New arrangements can be added via <code>/api/exam/allocations</code>.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = data.map((item) => {
+        const hallNo = this.escapeHtml(item.hall_no || "N/A");
+        const dateSession = this.escapeHtml(item.date_session || "N/A");
+        const subjName = this.escapeHtml(item.subject_name || "N/A");
+        const subjCode = item.subject_code ? `<span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:11px;margin-left:5px;">${this.escapeHtml(item.subject_code)}</span>` : "";
+        const className = this.escapeHtml(item.class_name || "N/A");
+        const classCode = item.class_code ? `<span style="font-size:11.5px;color:#64748b;display:block;">(${this.escapeHtml(item.class_code)})</span>` : "";
+        const rollRange = this.escapeHtml(item.roll_number_range || "N/A");
+        const totalStudents = item.total_students || 0;
+
+        return `
+          <tr>
+            <td style="font-weight:700;color:#0f172a;">
+              <span style="display:inline-block;padding:3px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                🏛️ ${hallNo}
+              </span>
+            </td>
+            <td style="font-weight:600;color:#1e293b;">
+              📅 ${dateSession}
+            </td>
+            <td>
+              <span style="font-weight:700;color:#0f172a;">${subjName}</span>
+              ${subjCode}
+            </td>
+            <td>
+              <span style="font-weight:600;color:#334155;">${className}</span>
+              ${classCode}
+            </td>
+            <td>
+              <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:#f1f5f9;color:#0f172a;padding:3px 8px;border-radius:5px;font-weight:600;">
+                ${rollRange}
+              </code>
+            </td>
+            <td style="text-align:center;font-weight:800;color:#2563eb;font-size:13.5px;">
+              ${totalStudents}
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+    } catch (err) {
+      console.error("Error loading exam seating:", err);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center;padding:2rem;color:#ef4444;">
+            Failed to load examination seating records. Please check the backend connection.
+          </td>
+        </tr>
+      `;
+      this.showToast("Failed to load examination seating records.", "error");
+    }
+  },
+
   escapeHtml(str) {
     if (!str) return "";
     return String(str)
@@ -1324,11 +1553,383 @@ const App = {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   },
+
+  // -------------------------------------------------------------------------
+  // Interactive Timetable Slot Swapping
+  // -------------------------------------------------------------------------
+
+  /**
+   * Toggle Swap Mode on/off.
+   * When active, clicking timetable slots picks source → target and calls the swap API.
+   */
+  toggleSwapMode() {
+    this.isSwapMode = !this.isSwapMode;
+    this.selectedSourceSlot = null;
+
+    const btn = document.getElementById("btn-toggle-swap-mode");
+    const txt = document.getElementById("btn-swap-mode-text");
+    if (btn) btn.classList.toggle("active", this.isSwapMode);
+    if (txt) txt.textContent = this.isSwapMode ? "⛔ Exit Swap Mode" : "🔃 Swap Mode";
+
+    // Re-render timetable so slot click handlers are wired up
+    this.renderTimetable();
+
+    if (this.isSwapMode) {
+      this.showToast("Swap Mode ON – click a source slot, then a target slot.", "info");
+    } else {
+      this.showToast("Swap Mode OFF.", "info");
+    }
+  },
+
+  /**
+   * Called when a slot cell is clicked while swap mode is active.
+   * Manages the source → target selection flow and calls performSlotSwap().
+   *
+   * @param {number} entryId   - timetable_entries.id of the clicked slot
+   * @param {string} day       - Day string e.g. "Monday"
+   * @param {number} periodNum - Period number 1–8
+   * @param {number} classId   - Class id
+   * @param {string} subjectName - Display label for toasts
+   * @param {HTMLElement} el   - The clicked <td> element
+   */
+  handleSlotClick(entryId, day, periodNum, classId, subjectName, el) {
+    if (!this.isSwapMode) return;
+
+    if (!this.selectedSourceSlot) {
+      // === Phase 1: select source ===
+      if (!entryId) {
+        this.showToast("Please select a filled slot as the source.", "warning");
+        return;
+      }
+      this.selectedSourceSlot = { entryId, day, periodNum, classId, subjectName, element: el };
+      el.classList.add("slot-selected");
+      this.showToast(`Source selected: "${subjectName}" on ${day} P${periodNum}. Now click the target slot.`, "info");
+    } else {
+      // === Phase 2: select target & swap ===
+      if (
+        this.selectedSourceSlot.entryId === entryId &&
+        this.selectedSourceSlot.classId === classId
+      ) {
+        // Same slot clicked — deselect
+        this.selectedSourceSlot.element?.classList.remove("slot-selected");
+        this.selectedSourceSlot = null;
+        this.showToast("Source deselected. Click a new source slot.", "info");
+        return;
+      }
+
+      this.performSlotSwap(this.selectedSourceSlot, { entryId, day, periodNum, classId, element: el });
+    }
+  },
+
+  /**
+   * Calls the /api/timetable/swap endpoint and handles the response.
+   *
+   * @param {object} src  - { entryId, day, periodNum, classId, subjectName, element }
+   * @param {object} tgt  - { entryId, day, periodNum, classId, element }
+   */
+  async performSlotSwap(src, tgt) {
+    // Build payload
+    let payload;
+    if (tgt.entryId) {
+      // Swap two filled slots
+      payload = { source_entry_id: src.entryId, target_entry_id: tgt.entryId };
+    } else {
+      // Move source to empty slot
+      payload = { source_entry_id: src.entryId, target_day: tgt.day, target_period: tgt.periodNum };
+    }
+
+    // Visual "pending" state
+    src.element?.classList.add("slot-swappable");
+    tgt.element?.classList.add("slot-swappable");
+
+    try {
+      const res = await fetch("/api/timetable/swap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // === Success ===
+        this.showToast(data.message || "Slot swapped successfully!", "success");
+        // Refresh timetable data and re-render
+        await this.refreshAllData();
+        this.renderTimetable();
+        this.renderFacultyTable();
+      } else {
+        // === Conflict ===
+        src.element?.classList.remove("slot-swappable");
+        tgt.element?.classList.remove("slot-swappable");
+        src.element?.classList.add("slot-conflict");
+        tgt.element?.classList.add("slot-conflict");
+        // Remove conflict highlight after animation
+        setTimeout(() => {
+          src.element?.classList.remove("slot-conflict", "slot-selected");
+          tgt.element?.classList.remove("slot-conflict");
+        }, 1400);
+        this.showToast("⚠️ " + (data.message || data.error || "Swap conflict detected."), "error");
+      }
+    } catch (err) {
+      console.error("Swap error:", err);
+      src.element?.classList.remove("slot-swappable", "slot-selected");
+      tgt.element?.classList.remove("slot-swappable");
+      this.showToast("Network error during slot swap.", "error");
+    } finally {
+      // Reset source selection
+      this.selectedSourceSlot = null;
+    }
+  },
 };
 
 // Start application when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   App.init();
+});
+
+// -------------------------------------------------------------------------
+// Auth Methods (appended to App object at module level)
+// -------------------------------------------------------------------------
+Object.assign(App, {
+
+  /**
+   * Checks localStorage for a session token.
+   * Shows dashboard if authenticated, auth card otherwise.
+   * Returns true if authenticated.
+   */
+  checkAuthStatus() {
+    const token = localStorage.getItem("auth_token");
+    const email = localStorage.getItem("auth_email");
+
+    if (token && email) {
+      this._showDashboard(email);
+      return true;
+    } else {
+      this._showAuthCard();
+      return false;
+    }
+  },
+
+  /** Reveals the auth login/signup card and hides the dashboard */
+  _showAuthCard() {
+    const authContainer = document.getElementById("auth-container");
+    const dashboard = document.getElementById("main-dashboard-container");
+    const userChip = document.getElementById("auth-user-chip");
+    if (authContainer) authContainer.style.display = "flex";
+    if (dashboard) dashboard.style.display = "none";
+    if (userChip) userChip.style.display = "none";
+  },
+
+  /** Reveals the main dashboard and hides the auth card */
+  _showDashboard(email) {
+    const authContainer = document.getElementById("auth-container");
+    const dashboard = document.getElementById("main-dashboard-container");
+    const userChip = document.getElementById("auth-user-chip");
+    const userEmailEl = document.getElementById("auth-user-email");
+    if (authContainer) authContainer.style.display = "none";
+    if (dashboard) dashboard.style.display = "block";
+    if (userChip) userChip.style.display = "flex";
+    if (userEmailEl) userEmailEl.textContent = email || "";
+
+    // Sync profile dropdown headers
+    const pEmail = document.getElementById("profile-dropdown-email");
+    const pName = document.getElementById("profile-dropdown-name");
+    const modalEmail = document.getElementById("modal-profile-email");
+    if (pEmail) pEmail.textContent = email || "staff@info.ac.in";
+    if (modalEmail) modalEmail.textContent = email || "staff@info.ac.in";
+    if (pName && email) {
+      const u = email.split("@")[0];
+      pName.textContent = u.charAt(0).toUpperCase() + u.slice(1);
+    }
+  },
+
+  /** Toggles the user profile dropdown menu in the top bar */
+  toggleProfileDropdown(event) {
+    if (event && event.stopPropagation) {
+      event.stopPropagation();
+    }
+    const dropdown = document.getElementById("user-profile-dropdown");
+    const avatarBtn = document.getElementById("btn-user-avatar");
+    if (!dropdown) return;
+
+    const isVisible = dropdown.style.display === "block";
+    dropdown.style.display = isVisible ? "none" : "block";
+    if (avatarBtn) {
+      avatarBtn.classList.toggle("active", !isVisible);
+      avatarBtn.setAttribute("aria-expanded", String(!isVisible));
+    }
+
+    if (!isVisible) {
+      // Close timetable download dropdown if open
+      const dlMenu = document.getElementById("timetable-download-dropdown");
+      if (dlMenu) dlMenu.style.display = "none";
+
+      // Sync active user details
+      const email = localStorage.getItem("auth_email") || "staff@info.ac.in";
+      const nameEl = document.getElementById("profile-dropdown-name");
+      const emailEl = document.getElementById("profile-dropdown-email");
+      if (emailEl) emailEl.textContent = email;
+      if (nameEl && email) {
+        const username = email.split("@")[0];
+        nameEl.textContent = username.charAt(0).toUpperCase() + username.slice(1);
+      }
+    }
+  },
+
+  /** Opens the comprehensive Account & Profile modal */
+  openProfileModal() {
+    this.closeModals();
+    const modal = document.getElementById("modal-profile");
+    if (!modal) return;
+
+    const email = localStorage.getItem("auth_email") || "staff@info.ac.in";
+    const emailEl = document.getElementById("modal-profile-email");
+    const classesEl = document.getElementById("modal-profile-classes-count");
+    const facultyEl = document.getElementById("modal-profile-faculty-count");
+
+    if (emailEl) emailEl.textContent = email;
+    if (classesEl) classesEl.textContent = `${this.classes.length || 0} Classes`;
+    if (facultyEl) facultyEl.textContent = `${this.faculty.length || 0} Members`;
+
+    modal.style.display = "flex";
+  },
+
+  /** Handles login OR signup form submission */
+  async handleAuthSubmit(event) {
+    event.preventDefault();
+    const email = (document.getElementById("auth-email")?.value || "").trim();
+    const password = document.getElementById("auth-password")?.value || "";
+
+    // Hide previous alerts
+    this._setAuthAlert("error", "", false);
+    this._setAuthAlert("success", "", false);
+
+    if (!email || !password) {
+      this._setAuthAlert("error", "Please enter your email and password.", true);
+      return;
+    }
+
+    const submitBtn = document.getElementById("auth-submit-btn");
+    const submitLabel = document.getElementById("auth-submit-label");
+    const spinner = document.getElementById("auth-submit-spinner");
+
+    // Loading state
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitLabel) submitLabel.style.display = "none";
+    if (spinner) spinner.style.display = "inline-block";
+
+    try {
+      if (this.authMode === "login") {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          localStorage.setItem("auth_token", data.token);
+          localStorage.setItem("auth_email", data.email || email);
+          this._showDashboard(data.email || email);
+          await this.initDashboard();
+        } else {
+          this._setAuthAlert("error", data.error || "Login failed. Please try again.", true);
+        }
+      } else {
+        // Signup mode
+        const res = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          this._setAuthAlert("success",
+            data.message || "Account created! Please check your email to verify, then log in.",
+            true
+          );
+          // Auto-switch to login mode after a short delay
+          setTimeout(() => this.toggleAuthMode("login"), 2200);
+        } else {
+          this._setAuthAlert("error", data.error || "Sign-up failed. Please try again.", true);
+        }
+      }
+    } catch (err) {
+      this._setAuthAlert("error", "Network error. Please check your connection and try again.", true);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+      if (submitLabel) submitLabel.style.display = "inline";
+      if (spinner) spinner.style.display = "none";
+    }
+  },
+
+  /** Toggles between login and signup view */
+  toggleAuthMode(forceTo) {
+    this.authMode = forceTo || (this.authMode === "login" ? "signup" : "login");
+    const isSignup = this.authMode === "signup";
+
+    const heading       = document.getElementById("auth-heading");
+    const subheading    = document.getElementById("auth-subheading");
+    const submitLabel   = document.getElementById("auth-submit-label");
+    const toggleQ       = document.getElementById("auth-toggle-question");
+    const toggleBtn     = document.getElementById("auth-toggle-btn");
+    const pwInput       = document.getElementById("auth-password");
+
+    if (heading)    heading.textContent    = isSignup ? "Create an account"       : "Welcome back";
+    if (subheading) subheading.textContent = isSignup ? "Fill in your details to get started" : "Sign in to manage schedules and timetables";
+    if (submitLabel) submitLabel.textContent = isSignup ? "Create Account" : "Sign In";
+    if (toggleQ)    toggleQ.textContent    = isSignup ? "Already have an account?" : "Don't have an account?";
+    if (toggleBtn)  toggleBtn.textContent  = isSignup ? "Sign in"                  : "Create one";
+    if (pwInput)    pwInput.setAttribute("autocomplete", isSignup ? "new-password" : "current-password");
+
+    // Clear alerts and reset form on mode switch
+    this._setAuthAlert("error", "", false);
+    this._setAuthAlert("success", "", false);
+    document.getElementById("auth-form")?.reset();
+  },
+
+  /** Logs the user out — clears localStorage and returns to auth screen */
+  async logout() {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } catch (_) { /* silent */ }
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_email");
+    this.showToast("Logged out successfully.", "success");
+    // Short delay so toast is visible, then show auth card
+    setTimeout(() => {
+      this._showAuthCard();
+      this.toggleAuthMode("login");
+    }, 600);
+  },
+
+  /** Show/hide password toggle */
+  togglePasswordVisibility() {
+    const input = document.getElementById("auth-password");
+    const icon  = document.getElementById("auth-eye-icon");
+    if (!input) return;
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    if (icon) {
+      icon.innerHTML = isHidden
+        ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`
+        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+    }
+  },
+
+  /** Helper to show/hide auth error or success alert */
+  _setAuthAlert(type, message, show) {
+    const el = document.getElementById(type === "error" ? "auth-error" : "auth-success");
+    if (!el) return;
+    el.textContent = message;
+    el.style.display = show ? "flex" : "none";
+    // force re-animation
+    if (show) {
+      el.style.animation = "none";
+      el.offsetHeight; // reflow
+      el.style.animation = "";
+    }
+  },
+
 });
 
 
@@ -1338,4 +1939,14 @@ document.addEventListener("click", (e) => {
     const menu = document.getElementById("timetable-download-dropdown");
     if (menu) menu.style.display = "none";
   }
+  if (!e.target.closest(".user-profile-wrapper")) {
+    const profileMenu = document.getElementById("user-profile-dropdown");
+    const avatarBtn = document.getElementById("btn-user-avatar");
+    if (profileMenu) profileMenu.style.display = "none";
+    if (avatarBtn) {
+      avatarBtn.classList.remove("active");
+      avatarBtn.setAttribute("aria-expanded", "false");
+    }
+  }
 });
+

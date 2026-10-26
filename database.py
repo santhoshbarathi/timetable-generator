@@ -50,6 +50,7 @@ def init_db(force: bool = False) -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             code TEXT NOT NULL UNIQUE,
+            semester INTEGER DEFAULT 1 CHECK(semester BETWEEN 1 AND 8),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
@@ -61,7 +62,7 @@ def init_db(force: bool = False) -> None:
         CREATE TABLE IF NOT EXISTS faculty (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            department TEXT NOT NULL,
+            department TEXT DEFAULT '',
             work_type TEXT NOT NULL CHECK(work_type IN ('full_time', 'part_time')),
             weekly_period_limit INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -91,6 +92,7 @@ def init_db(force: bool = False) -> None:
         CREATE TABLE IF NOT EXISTS timetable_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+            semester INTEGER DEFAULT 1,
             day TEXT NOT NULL,
             period_num INTEGER NOT NULL CHECK(period_num BETWEEN 1 AND 8),
             subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
@@ -164,6 +166,12 @@ def seed_sample_data_if_empty() -> bool:
         ("MEKALADEVI.A", "Mathematics / S&H", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
         ("MUTHULAKSHMI.S", "Physics / S&H", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
         ("KANAGAVALLI.K", "Chemistry / S&H", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
+        # Lab faculty
+        ("SWARNA.S", "AI & DS", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
+        ("KIRUTHIKA DEVI.M", "Information Technology", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
+        ("SARANYA.T", "Information Technology", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
+        ("SARANYA.R", "Science and Humanities", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
+        ("DHIVAKARAN.S", "Science and Humanities", WORK_TYPE_FULL_TIME, MAX_FULL_TIME_WEEKLY_PERIODS),
     ]
     cursor.executemany(
         """
@@ -197,6 +205,11 @@ def seed_sample_data_if_empty() -> bool:
         (classes_by_code["AIDS-3"], "Elements of Literature", "MX3082", 3, faculty_by_name["GRACEPRIYADARSHINI"]),
         (classes_by_code["AIDS-3"], "Ethics & AI", "CCS34", 3, faculty_by_name["PRAKASH.P.K"]),
         (classes_by_code["AIDS-3"], "Data and Information Security", "CW3551", 4, faculty_by_name["SHAMPAVI.T"]),
+        # AI&DS 3rd Year Labs (2 periods/week = 1 continuous 2hr block/week)
+        (classes_by_code["AIDS-3"], "Deep Learning Lab", "AD3501L", 2, faculty_by_name["VIGNESH.T.R"]),
+        (classes_by_code["AIDS-3"], "Big Data Analytics Lab", "CCS334L", 2, faculty_by_name["LATHA"]),
+        (classes_by_code["AIDS-3"], "Ethics & AI Lab", "CCS34L", 2, faculty_by_name["PRAKASH.P.K"]),
+        (classes_by_code["AIDS-3"], "Cloud Computing Lab", "CCS335L", 2, faculty_by_name["SWARNA.S"]),
 
         # --- Department of AI&DS: 4th Year (AIDS-4) ---
         (classes_by_code["AIDS-4"], "Human Values & Ethics", "GE3791", 3, faculty_by_name["SANTHOSH C.R"]),
@@ -220,6 +233,12 @@ def seed_sample_data_if_empty() -> bool:
         (classes_by_code["IT-3"], "Cloud Computing", "CCS335", 4, faculty_by_name["SUNDARI.P"]),
         (classes_by_code["IT-3"], "Embedded Systems & IoT", "CS3691", 4, faculty_by_name["BHARATHI.B"]),
         (classes_by_code["IT-3"], "Elements of Literature", "MX3082", 3, faculty_by_name["GRACEPRIYADARSHINI"]),
+        # IT 3rd Year Labs (2 periods/week = 1 continuous 2hr block/week)
+        (classes_by_code["IT-3"], "Computer Networks Lab", "CS3591L1", 2, faculty_by_name["KIRUTHIKA DEVI.M"]),
+        (classes_by_code["IT-3"], "Software Testing & Automation Lab", "CCS366L", 2, faculty_by_name["LATHA"]),
+        (classes_by_code["IT-3"], "Full Stack Web Development Lab", "IT3501L", 2, faculty_by_name["SUNDARI.P"]),
+        (classes_by_code["IT-3"], "Embedded Systems & IoT Lab", "CS3691L", 2, faculty_by_name["SARANYA.T"]),
+        (classes_by_code["IT-3"], "Computer Networks Lab (Batch 2)", "CS3591L2", 2, faculty_by_name["SUNDARI.P"]),
 
         # --- Department of IT: 4th Year (IT-4) ---
         (classes_by_code["IT-4"], "Human Values and Ethics", "GE3791", 3, faculty_by_name["SANTHOSH C.R"]),
@@ -235,6 +254,10 @@ def seed_sample_data_if_empty() -> bool:
         (classes_by_code["SH-1"], "Engineering Physics", "26PH101T", 4, faculty_by_name["MUTHULAKSHMI.S"]),
         (classes_by_code["SH-1"], "Engineering Chemistry", "26CY101T", 4, faculty_by_name["KANAGAVALLI.K"]),
         (classes_by_code["SH-1"], "Programming in C", "26CS104T", 4, faculty_by_name["KARTHIKA.V"]),
+        # S&H 1st Year Labs (2 periods/week = 1 continuous 2hr block/week)
+        (classes_by_code["SH-1"], "Physics / Chemistry Lab", "26PHCYL", 2, faculty_by_name["MUTHULAKSHMI.S"]),
+        (classes_by_code["SH-1"], "PC Lab", "26PCL", 2, faculty_by_name["SARANYA.R"]),
+        (classes_by_code["SH-1"], "EP Lab", "26EPL", 2, faculty_by_name["DHIVAKARAN.S"]),
     ]
 
     cursor.executemany(
