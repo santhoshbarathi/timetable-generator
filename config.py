@@ -62,7 +62,7 @@ BREAK_TIMINGS = {
         "name": "Afternoon Tea Break",
         "after_period": SHORT_BREAK_2_AFTER_PERIOD,
         "start": "14:45",
-        "end": "15:05",
+        "end": "15:00",
         "duration_minutes": 20,
         "type": "automatic_short_break",
     },
@@ -94,3 +94,12 @@ MIN_PERIODS_PER_WEEK = 1
 MAX_PERIODS_PER_WEEK = 6  # Up to 6 periods per week per theory subject
 MAX_SUBJECT_PERIODS_PER_DAY = 2  # Up to 2 periods of the same subject on any day (e.g. 6-period subjects or 2-hour labs)
 
+
+
+# Compulsory Faculty Workload (AICTE / University Mandate)
+# All faculty members must have a compulsory teaching schedule of 16 hours per week.
+COMPULSORY_FACULTY_WEEKLY_HOURS = 16
+
+# Zero Free Period Constraint
+# Every class must have all 40 slots (5 days x 8 periods) fully scheduled with zero free periods.
+ZERO_FREE_PERIODS_POLICY = True

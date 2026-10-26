@@ -1578,68 +1578,1080 @@ body.fit-to-screen .slot-faculty-name {
   to { transform: rotate(360deg); }
 }
 
+/* Old print styles removed in favor of modern master print stylesheet */
+
+
+
 /* ==========================================================================
-   Print Styles — High Contrast & Pattern Preservation
+   Modern SaaS Layout (User Reference Time Table Design)
    ========================================================================== */
+body {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100vh !important;
+}
+
+/* --- Top Header Bar --- */
+.saas-topbar {
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.saas-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.saas-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: #3b82f6;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+}
+
+.saas-logo-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.saas-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.saas-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.saas-avatar:hover {
+  background: #e2e8f0;
+}
+
+/* --- Main Layout: Sidebar + Content --- */
+.saas-layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.saas-sidebar {
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 24px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.saas-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.saas-nav-item:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.saas-nav-item.active {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+.saas-nav-item.active svg {
+  color: #2563eb !important;
+  stroke: #2563eb !important;
+}
+
+.saas-content {
+  flex: 1;
+  padding: 28px 36px;
+  overflow-x: auto;
+  max-width: 1600px;
+  background: #f8fafc;
+}
+
+/* --- Content Page Header --- */
+.saas-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.saas-page-title-group h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 3px 0;
+  letter-spacing: -0.4px;
+}
+
+.saas-page-title-group p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.saas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.saas-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.saas-date-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+.saas-date-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.saas-date-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.saas-class-select {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+.saas-class-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.saas-btn-primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 9px 18px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+}
+.saas-btn-primary:hover {
+  background: #1d4ed8 !important;
+  transform: translateY(-1px);
+}
+
+/* --- The Timetable Table Card --- */
+.saas-table-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+/* --- SaaS Schedule Matrix Table: Clean, Spacious, Highly Readable Layout --- */
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0 0 14px 14px;
+}
+
+.saas-schedule-table {
+  width: 100% !important;
+  min-width: 980px;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-size: 13px !important;
+  background: #ffffff !important;
+}
+
+.saas-schedule-table th {
+  background: #f8fafc !important;
+  padding: 12px 6px !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+  color: #1e293b !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  border-right: 1px solid #f1f5f9 !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+.saas-schedule-table td {
+  padding: 8px 6px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-right: 1px solid #f1f5f9 !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  background: #ffffff;
+}
+
+.saas-schedule-table tr:hover td {
+  background: #fbfcfe;
+}
+
+/* Col 1: Day (Monday – Friday) */
+.saas-schedule-table th:first-child,
+.saas-schedule-table td:first-child,
+.saas-day-cell {
+  width: 100px !important;
+  min-width: 95px !important;
+  max-width: 110px !important;
+  text-align: left !important;
+  padding-left: 18px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-right: 2px solid #e2e8f0 !important;
+}
+
+/* 8 Teaching Periods (Periods 1 through 8) */
+.saas-schedule-table th:not(:first-child):not(.lunch-col-header):not(.short-break-col-header),
+.saas-schedule-table td:not(:first-child):not(.lunch-cell):not(.break-cell) {
+  min-width: 100px !important;
+}
+
+/* 3 Break Columns (Morning, Lunch, Tea) */
+.lunch-col-header,
+.short-break-col-header,
+.lunch-cell,
+.break-cell {
+  width: 65px !important;
+  min-width: 55px !important;
+  max-width: 70px !important;
+  padding: 6px 3px !important;
+  background: #fafaf9 !important;
+}
+
+.lunch-col-header,
+.lunch-cell {
+  background: #fffbeb !important;
+  border-left: 1px solid #fef3c7 !important;
+  border-right: 1px solid #fef3c7 !important;
+}
+
+/* Unified single column break spanning all days */
+.unified-break-cell {
+  vertical-align: middle !important;
+  text-align: center !important;
+  padding: 8px 4px !important;
+  position: relative;
+  background: #fafaf9 !important;
+  border-left: 1.5px dashed #cbd5e1 !important;
+  border-right: 1.5px dashed #cbd5e1 !important;
+}
+
+.unified-break-cell.lunch-cell {
+  background: #fffdf5 !important;
+  border-left: 1.5px solid #fcd34d !important;
+  border-right: 1.5px solid #fcd34d !important;
+}
+
+.unified-break-cell .pill-lunch,
+.unified-break-cell .pill-break {
+  height: 100% !important;
+  min-height: 240px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  border-radius: 8px !important;
+  padding: 12px 2px !important;
+}
+
+.break-vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.saas-time-cell {
+  font-weight: 600;
+  color: #475569;
+  font-size: 12.5px;
+  white-space: nowrap;
+  width: 130px;
+  padding-left: 20px !important;
+}
+
+/* Period Table Cell: Full Period Cell Occupancy */
+.saas-schedule-table td.period-cell {
+  padding: 4px !important;
+  height: 100% !important;
+  vertical-align: stretch !important;
+}
+
+/* --- Subject Pastel Pill Cards: Full Period Occupancy --- */
+.schedule-pill {
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.schedule-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+
+.schedule-pill .pill-subject {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.1px;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.schedule-pill .pill-sub {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 0.95;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pill-lunch {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a !important;
+}
+
+.pill-break {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Harmonious Curated Subject Colors (Easy on the eyes) */
+.pill-blue {
+  background: #eff6ff !important;
+  color: #1e40af !important;
+  border-color: #dbeafe !important;
+}
+.pill-blue .pill-sub {
+  color: #3b82f6 !important;
+}
+
+.pill-green {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border-color: #dcfce7 !important;
+}
+.pill-green .pill-sub {
+  color: #16a34a !important;
+}
+
+.pill-purple {
+  background: #faf5ff !important;
+  color: #6b21a8 !important;
+  border-color: #f3e8ff !important;
+}
+.pill-purple .pill-sub {
+  color: #9333ea !important;
+}
+
+.pill-pink {
+  background: #fff1f2 !important;
+  color: #9f1239 !important;
+  border-color: #ffe4e6 !important;
+}
+.pill-pink .pill-sub {
+  color: #e11d48 !important;
+}
+
+.pill-yellow {
+  background: #fefce8 !important;
+  color: #854d0e !important;
+  border-color: #fef08a !important;
+}
+.pill-yellow .pill-sub {
+  color: #ca8a04 !important;
+}
+
+.pill-teal {
+  background: #f0fdfa !important;
+  color: #115e59 !important;
+  border-color: #ccfbf1 !important;
+}
+.pill-teal .pill-sub {
+  color: #0d9488 !important;
+}
+
+.pill-peach {
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  border-color: #ffedd5 !important;
+}
+.pill-peach .pill-sub {
+  color: #ea580c !important;
+}
+
+.pill-lavender {
+  background: #f5f3ff !important;
+  color: #5b21b6 !important;
+  border-color: #ede9fe !important;
+}
+.pill-lavender .pill-sub {
+  color: #7c3aed !important;
+}
+
+.schedule-empty {
+  color: #cbd5e1;
+  text-align: center;
+  font-size: 16px;
+  display: block;
+  user-select: none;
+}
+
+
+
+/* Swapped Horizontal Time Slots Styles */
+.saas-day-cell {
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  font-size: 13.5px !important;
+  white-space: nowrap !important;
+  width: 110px !important;
+  padding-left: 20px !important;
+}
+
+/* Overrides for clean full-width 8-period presentation */
+.saas-schedule-table th {
+  text-align: center !important;
+  padding: 9px 3px !important;
+  font-size: 12px !important;
+}
+
+.saas-schedule-table td {
+  min-width: 0 !important;
+  padding: 5px 3px !important;
+}
+
+.lunch-col-header {
+  background: #fefce8 !important;
+  color: #92400e !important;
+  min-width: 38px !important;
+}
+
+.short-break-col-header {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  min-width: 36px !important;
+}
+
+.pill-blue-alt {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+.pill-blue-alt .pill-sub {
+  color: #2563eb !important;
+}
+
+
+
+/* Enhanced Date Picker Spacing & Styling */
+.saas-date-picker {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.saas-date-btn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  transition: all 0.15s ease !important;
+}
+
+.saas-date-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.saas-date-text {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.2px !important;
+  cursor: pointer !important;
+}
+.saas-date-text:hover {
+  color: #2563eb !important;
+}
+
+/* ── View Mode Toolbar ─────────────────────────────────────────── */
+#btn-view-single, #btn-view-dual, #btn-view-all,
+#btn-layout-stacked, #btn-layout-split,
+#btn-toggle-fit {
+  background: #f8fafc;
+  color: #475569;
+  transition: background 0.15s, color 0.15s;
+}
+#btn-view-single:hover, #btn-view-dual:hover, #btn-view-all:hover,
+#btn-layout-stacked:hover, #btn-layout-split:hover,
+#btn-toggle-fit:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+#btn-view-single.active, #btn-view-dual.active, #btn-view-all.active,
+#btn-layout-stacked.active, #btn-layout-split.active,
+#btn-toggle-fit.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+
+
+/* ==========================================================================
+   Timetable Card Header & Download/Print Controls
+   ========================================================================== */
+.timetable-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.timetable-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.timetable-card-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.timetable-card-code {
+  font-size: 12px;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.timetable-card-meta {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.timetable-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timetable-card-actions .btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.timetable-card-actions .btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+/* Print Banner & Signature Blocks (Hidden on screen) */
+.print-only-banner {
+  display: none;
+}
+
+.print-legend-section {
+  display: none;
+}
+
+.print-signatures {
+  display: none;
+}
+
+
+/* ==========================================================================
+   University Quality Print Stylesheet (@media print) — 100% Page Fit
+   ========================================================================== */
+.print-only-banner {
+  display: none;
+}
+
+.print-legend-section {
+  display: none;
+}
+
+.print-signatures {
+  display: none;
+}
+
 @media print {
+  @page {
+    size: landscape;
+    margin: 6mm 8mm;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
-  .app-header, .nav-tabs, .control-card, .btn, .header-badges, .class-selector-dropdown,
-  .college-topbar, .college-brandband {
+
+  /* Completely remove overflow scrolling and constraints on print */
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 8pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  /* Hide interactive web UI chrome */
+  .saas-sidebar,
+  .saas-topbar,
+  .saas-header-actions,
+  .timetable-card-actions,
+  .btn,
+  .btn-group,
+  .dropdown-wrapper,
+  .saas-class-select,
+  .modal-overlay,
+  .toast-container,
+  #faculty-timetable-select,
+  #faculty-timetable-info,
+  .status-badge,
+  .saas-nav-item,
+  .saas-page-header,
+  header,
+  aside {
     display: none !important;
   }
-  body, .container {
-    background: #fff !important;
-    color: #000 !important;
-    padding: 0;
-    margin: 0;
-    max-width: 100%;
+
+  .saas-layout {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
-  .timetable-card {
-    box-shadow: none !important;
-    border: 1.5px solid #334155 !important;
-    page-break-after: always;
-    margin-bottom: 2rem;
+
+  .saas-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
   }
-  .timetable-card-header {
-    background: #f1f5f9 !important;
-    border-bottom: 1.5px solid #334155 !important;
+
+  .tab-pane {
+    display: none !important;
   }
-  .timetable-wrapper {
-    box-shadow: none !important;
-    border: 1.5px solid #000 !important;
+
+  .tab-pane.active {
+    display: block !important;
+    width: 100% !important;
   }
-  .timetable-table th {
-    background: #f1f5f9 !important;
-    color: #000 !important;
-    border-color: #475569 !important;
+
+  .timetables-container,
+  #timetables-container,
+  .table-scroll-wrapper,
+  div {
+    overflow: visible !important;
+    max-width: 100% !important;
   }
-  .timetable-table td {
-    border-color: #64748b !important;
-  }
-  .slot-card {
+
+  /* Each timetable card fits perfectly on ONE page */
+  .saas-table-card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
     border: 1px solid #475569 !important;
-    border-left: 5px solid #000 !important;
+    border-radius: 6px !important;
+    margin: 0 0 10px 0 !important;
+    padding: 0 0 6px 0 !important;
     box-shadow: none !important;
-    background: #fff !important;
+    background: #ffffff !important;
+    overflow: visible !important;
   }
-  .slot-card.part-time {
-    border-left: 5px dashed #475569 !important;
+
+  .saas-table-card:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .print-only-banner {
+    display: block !important;
+    margin: 0 !important;
+    padding: 6px 10px 4px !important;
+    background: #ffffff !important;
+  }
+
+  .timetable-card-top {
+    padding: 4px 10px !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #94a3b8 !important;
+    border-bottom: 1px solid #94a3b8 !important;
+  }
+
+  .timetable-card-title {
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+  }
+
+  .timetable-card-code {
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+    border-radius: 4px !important;
+  }
+
+  .timetable-card-meta {
+    font-size: 8pt !important;
+    color: #64748b !important;
+  }
+
+  /* ── 100% Table Fitting: table-layout fixed, exact column width calculation ── */
+  .saas-schedule-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .saas-schedule-table th,
+  .saas-schedule-table td {
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 3px 2px !important;
+    border: 1px solid #64748b !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: hidden !important;
+    font-size: 6.8pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .saas-schedule-table th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 6.8pt !important;
+    padding: 4px 2px !important;
+  }
+
+  /* Day Column: 6.8% */
+  .saas-schedule-table th:first-child,
+  .saas-schedule-table td:first-child,
+  .saas-day-cell {
+    width: 6.8% !important;
+    min-width: 0 !important;
+    max-width: 6.8% !important;
+    font-size: 7.2pt !important;
+    font-weight: 700 !important;
+    background: #f8fafc !important;
+    text-align: left !important;
+    padding-left: 3px !important;
+    color: #0f172a !important;
+  }
+
+  /* 8 Teaching Periods: each 9.85% (8 * 9.85% = 78.8%) */
+  .saas-schedule-table th:not(:first-child):not(.lunch-col-header):not(.short-break-col-header),
+  .saas-schedule-table td:not(:first-child):not(.lunch-cell):not(.break-cell) {
+    width: 9.85% !important;
+    min-width: 0 !important;
+  }
+
+  /* 3 Breaks (Morning, Lunch, Tea): each 4.8% (3 * 4.8% = 14.4%) */
+  /* Total = 6.8% + 78.8% + 14.4% = 100.0% EXACT! */
+  .lunch-col-header,
+  .short-break-col-header,
+  .lunch-cell,
+  .break-cell {
+    width: 4.8% !important;
+    min-width: 0 !important;
+    max-width: 4.8% !important;
+    padding: 1px !important;
     background: #f8fafc !important;
   }
-  .break-cell {
-    background: repeating-linear-gradient(-45deg, #fff, #fff 6px, #e2e8f0 6px, #e2e8f0 12px) !important;
-    border-right: 2px solid #000 !important;
+
+  .lunch-col-header,
+  .short-break-col-header {
+    font-size: 5.6pt !important;
+    line-height: 1.05 !important;
+    color: #475569 !important;
   }
-  .short-break-cell {
+
+  .schedule-pill {
+    padding: 2px 2px !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    border: 0.5pt solid #cbd5e1 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .pill-subject {
+    font-size: 6.2pt !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+    color: #0f172a !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  .pill-sub {
+    font-size: 5.4pt !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    color: #475569 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    margin-top: 1px !important;
+  }
+
+  .pill-lunch,
+  .pill-break {
+    font-size: 5.8pt !important;
+    font-weight: 700 !important;
+    line-height: 1.05 !important;
+    padding: 2px 1px !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  .unified-break-cell {
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
+
+  .unified-break-cell .pill-lunch,
+  .unified-break-cell .pill-break {
+    height: 100% !important;
+    min-height: 120px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .unified-break-cell .break-vertical-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    letter-spacing: 1.5px;
+    font-size: 6.5pt !important;
+    font-weight: 800 !important;
+  }
+
+  .pill-lunch {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 0.5pt dashed #f59e0b !important;
+  }
+
+  .pill-break {
     background: #f1f5f9 !important;
-    border-right: 2px dashed #475569 !important;
+    color: #475569 !important;
+    border: 0.5pt dashed #94a3b8 !important;
   }
-  .lunch-badge, .short-badge {
-    border: 1.5px solid #000000 !important;
-    color: #000000 !important;
-    background: #ffffff !important;
+
+  /* Course & Faculty Allocation Legend */
+  .print-legend-section {
+    display: block !important;
+    margin-top: 6px !important;
+    padding: 0 8px !important;
+    font-size: 7pt !important;
+  }
+
+  .print-legend-section table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-legend-section th,
+  .print-legend-section td {
+    padding: 2px 4px !important;
+    font-size: 6.6pt !important;
+    border: 1px solid #cbd5e1 !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-legend-section th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  /* Formal University Signatures Block */
+  .print-signatures {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 10px !important;
+    padding: 5px 12px 2px !important;
+    border-top: 1px dashed #94a3b8 !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
   }
 }

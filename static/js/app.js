@@ -13,10 +13,10 @@ const App = {
   selectedClassId: null,
   selectedClassId1: null,
   selectedClassId2: null,
-  viewMode: "dual", // "dual" | "single" | "all"
+  selectedFacultyId: null,   // for Faculty Timetable tab
+  viewMode: "single", // "single" | "dual" | "all"
   dualLayout: "stacked", // "stacked" | "split"
   isFitToScreen: true, // Default to full-width fit to screen
-
   // -------------------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------------------
@@ -32,6 +32,7 @@ const App = {
 
       this.renderTimetable();
       this.renderFacultyTable();
+        this.populateFacultyTimetableDropdown();
       this.renderClassesAndSubjects();
     } catch (err) {
       console.error("Initialization error:", err);
@@ -61,6 +62,22 @@ const App = {
     const facCountEl = document.getElementById("faculty-tab-count");
     if (facCountEl) facCountEl.textContent = this.faculty.length;
 
+    // Populate global class selectors in header (selector 1 and 2)
+    const globalSelect = document.getElementById("global-class-select");
+    if (globalSelect && this.classes.length > 0) {
+      globalSelect.innerHTML = this.classes
+        .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId1 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`)
+        .join("");
+    }
+    const globalSelect2 = document.getElementById("global-class-select-2");
+    if (globalSelect2 && this.classes.length > 0) {
+      globalSelect2.innerHTML = this.classes
+        .map((c) => `<option value="${c.id}" ${c.id === this.selectedClassId2 ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`)
+        .join("");
+      // Show selector-2 only in dual mode
+      globalSelect2.style.display = this.viewMode === "dual" ? "" : "none";
+    }
+
     // Default selected classes for single and dual timetable views
     if (this.classes.length > 0) {
       if (!this.selectedClassId1 || !this.classes.some((c) => c.id === this.selectedClassId1)) {
@@ -83,12 +100,109 @@ const App = {
   // Tab Navigation
   // -------------------------------------------------------------------------
   switchTab(tabId) {
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
+    document.querySelectorAll(".tab-btn, .saas-nav-item").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === tabId);
     });
     document.querySelectorAll(".tab-pane").forEach((pane) => {
       pane.classList.toggle("active", pane.id === tabId);
     });
+  },
+
+  openModal(modalId) {
+    if (modalId === "modal-subject") {
+      this.openAddSubjectModal();
+    } else if (modalId === "modal-faculty") {
+      this.openAddFacultyModal();
+    } else if (modalId === "modal-class") {
+      this.openAddClassModal();
+    } else {
+      const el = document.getElementById(modalId);
+      if (el) el.style.display = "flex";
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // Download & Printing Export Handlers
+  // -------------------------------------------------------------------------
+  toggleDownloadDropdown(evt) {
+    if (evt && evt.stopPropagation) evt.stopPropagation();
+    const menu = document.getElementById("timetable-download-dropdown");
+    if (!menu) return;
+    if (typeof evt === "boolean") {
+      menu.style.display = evt ? "block" : "none";
+    } else {
+      menu.style.display = menu.style.display === "none" || !menu.style.display ? "block" : "none";
+    }
+  },
+
+  downloadTimetableCsv(classId) {
+    const cid = classId || this.selectedClassId1 || this.selectedClassId || (this.classes[0]?.id);
+    if (!cid) {
+      this.showToast("No class selected to download.", "warning");
+      return;
+    }
+    const targetUrl = `/api/export/timetable/csv?class_id=${cid}`;
+    window.location.href = targetUrl;
+    this.showToast("Downloading class timetable CSV...", "info");
+  },
+
+  downloadAllTimetablesCsv() {
+    window.location.href = `/api/export/timetable/csv?all=true`;
+    this.showToast("Downloading all class timetables CSV...", "info");
+  },
+
+  downloadFacultyTimetableCsv(facultyId) {
+    const fid = facultyId || this.selectedFacultyId;
+    if (!fid) {
+      this.showToast("Please select a faculty member first.", "warning");
+      return;
+    }
+    window.location.href = `/api/export/faculty/csv?faculty_id=${fid}`;
+    this.showToast("Downloading faculty schedule CSV...", "info");
+  },
+
+  downloadTimetableJson() {
+    if (!this.timetableData) {
+      this.showToast("No timetable data to export.", "warning");
+      return;
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.timetableData, null, 2));
+    const dlAnchor = document.createElement("a");
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `Department_Timetable_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+    this.showToast("Timetable JSON exported successfully!", "success");
+  },
+
+  printTimetable() {
+    window.print();
+  },
+
+  printSingleTimetable(classId) {
+    const prevMode = this.viewMode;
+    const prevId = this.selectedClassId;
+    this.selectedClassId = classId;
+    this.selectedClassId1 = classId;
+    this.viewMode = "single";
+    this.renderTimetable();
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        this.viewMode = prevMode;
+        this.selectedClassId = prevId;
+        this.renderTimetable();
+      }, 500);
+    }, 100);
+  },
+
+  printFacultyTimetable() {
+    if (!this.selectedFacultyId) {
+      this.showToast("Please select a faculty member first.", "warning");
+      return;
+    }
+    window.print();
   },
 
   // -------------------------------------------------------------------------
@@ -102,8 +216,16 @@ const App = {
 
     const layoutToggle = document.getElementById("dual-layout-toggle");
     if (layoutToggle) {
-      layoutToggle.style.display = mode === "dual" ? "flex" : "none";
+      layoutToggle.style.display = mode === "dual" ? "inline-flex" : "none";
     }
+
+    // Show/hide second class selector wrapper
+    const sel2Wrapper = document.getElementById("dual-select-wrapper");
+    if (sel2Wrapper) {
+      sel2Wrapper.style.display = mode === "dual" ? "inline-flex" : "none";
+    }
+    const sel2 = document.getElementById("global-class-select-2");
+    if (sel2) sel2.style.display = mode === "dual" ? "" : "none";
 
     this.renderTimetable();
   },
@@ -199,107 +321,261 @@ const App = {
     if (!cls) return "";
 
     const classSched = this.timetableData?.schedules_by_class?.[cls.id];
-    const days = this.config?.days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-    // Options dropdown for selecting class
-    const optionsHtml = this.classes
-      .map(
-        (c) =>
-          `<option value="${c.id}" ${c.id === cls.id ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`
-      )
-      .join("");
+    // Update global class select if needed
+    const globalSelect = document.getElementById("global-class-select");
+    if (globalSelect && globalSelect.children.length === 0 && this.classes.length > 0) {
+      globalSelect.innerHTML = this.classes
+        .map((c) => `<option value="${c.id}" ${c.id === cls.id ? "selected" : ""}>${this.escapeHtml(c.name)} (${this.escapeHtml(c.code)})</option>`)
+        .join("");
+    }
 
-    const badgeClass = slotIndex === 1 ? "slot-1" : slotIndex === 2 ? "slot-2" : "slot-default";
+    const getColorForSubject = (name, code) => {
+      const n = (name || "").toLowerCase();
+      const c = (code || "").toLowerCase();
+      if (n.includes("operating") || c.includes("os")) return "pill-blue";
+      if (n.includes("discrete") || c.includes("dm")) return "pill-yellow";
+      if (n.includes("exploratory") || n.includes("eda") || c.includes("eda")) return "pill-purple";
+      if (n.includes("java") || c.includes("java")) return "pill-lavender";
+      if (n.includes("data structure") || c.includes("ds")) return "pill-blue-alt";
 
-    // Table rows
+      const colorClasses = [
+        "pill-blue",
+        "pill-yellow",
+        "pill-purple",
+        "pill-lavender",
+        "pill-blue-alt",
+        "pill-green",
+        "pill-pink",
+        "pill-teal",
+        "pill-peach"
+      ];
+      let hash = 0;
+      const str = name || code || "";
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colorClasses[Math.abs(hash) % colorClasses.length];
+    };
+
+    // Build periods dynamically from config.py via API (incorporating Morning Break, Lunch Break, and Tea Break)
+    const _pt = this.timetableData?.period_timings || {};
+    const _bt = this.timetableData?.break_timings  || {};
+    const _sb1 = _bt.short_break_1 || {};
+    const _lunch = _bt.lunch_break || {};
+    const _sb2 = _bt.short_break_2 || {};
+
+    const _sb1After = _sb1.after_period || 2;
+    const _sb1Time  = (_sb1.start || "10:40") + " – " + (_sb1.end || "10:50");
+    const _lunchAfter = _lunch.after_period || 4;
+    const _lunchTime  = (_lunch.start || "12:30") + " – " + (_lunch.end || "13:05");
+    const _sb2After = _sb2.after_period || 6;
+    const _sb2Time  = (_sb2.start || "14:45") + " – " + (_sb2.end || "15:05");
+
+    const periods = (() => {
+      const nums = Object.keys(_pt).map(Number).sort((a, b) => a - b);
+      const arr = [];
+      for (const num of nums) {
+        if (num === _sb1After + 1) {
+          arr.push({ isBreak: true, label: "Morning Break", time: _sb1Time, breakType: "short" });
+        }
+        if (num === _lunchAfter + 1) {
+          arr.push({ isBreak: true, label: "Lunch Break", time: _lunchTime, breakType: "lunch" });
+        }
+        if (num === _sb2After + 1) {
+          arr.push({ isBreak: true, label: "Tea Break", time: _sb2Time, breakType: "short" });
+        }
+        const t = _pt[num];
+        const label = t.label || (t.start + " – " + t.end);
+        arr.push({ num, time: label });
+      }
+      return arr;
+    })();
+
     let rowsHtml = "";
-    if (!classSched || !classSched.grid) {
-      rowsHtml = `<tr><td colspan="12" style="text-align: center; padding: 2rem; color: var(--slate-500);">No schedule generated yet for this class. Click "Regenerate Timetable" to generate.</td></tr>`;
-    } else {
-      days.forEach((day) => {
-        const dayGrid = classSched.grid[day] || {};
 
-        const renderPeriodSlot = (pNum) => {
-          const slot = dayGrid[pNum];
-          if (!slot) {
-            return `<td><div class="empty-slot">— Free —</div></td>`;
+    // Days running vertically down the left side
+    days.forEach((day, dayIdx) => {
+      const dayGrid = classSched?.grid?.[day] || {};
+      let cellsHtml = "";
+
+      // Time slots running horizontally across
+      const skipPeriods = new Set();
+      periods.forEach((period, pidx) => {
+        if (period.isBreak) {
+          // Render unified break column on the first day spanning all days
+          if (dayIdx === 0) {
+            const pillClass = period.breakType === "lunch" ? "pill-lunch" : "pill-break";
+            const cellClass = period.breakType === "lunch" ? "lunch-cell unified-break-cell" : "break-cell unified-break-cell";
+            cellsHtml += `
+              <td class="${cellClass}" rowspan="${days.length}">
+                <div class="${pillClass}">
+                  <span class="break-vertical-text">${period.label}</span>
+                </div>
+              </td>
+            `;
           }
-          const isPt = slot.faculty_work_type === "part_time";
-          return `
-            <td>
-              <div class="slot-card ${isPt ? "part-time" : "full-time"}">
-                <div>
-                  <span class="slot-subject-code">${this.escapeHtml(slot.subject_code)}</span>
-                  <div class="slot-subject-name" title="${this.escapeHtml(slot.subject_name)}">${this.escapeHtml(slot.subject_name)}</div>
-                </div>
-                <div class="slot-faculty">
-                  <span class="slot-faculty-name" title="${this.escapeHtml(slot.faculty_name)}">${this.escapeHtml(slot.faculty_name)}</span>
-                  <span class="slot-tag ${isPt ? "pt" : "ft"}">${isPt ? "PT" : "FT"}</span>
-                </div>
+          // On other days (Tuesday-Friday), the break cell is occupied by the rowspan
+          return;
+        }
+
+        if (skipPeriods.has(period.num)) {
+          // Merged into previous colspan=2 lab cell
+          return;
+        }
+
+        const slot = dayGrid[period.num];
+
+        // Detect lab block: next consecutive period has same subject_id
+        let isLabBlock = false;
+        if (slot && slot.subject_id) {
+          const nextPeriod = periods[pidx + 1];
+          if (nextPeriod && !nextPeriod.isBreak) {
+            const nextSlot = dayGrid[nextPeriod.num];
+            if (nextSlot && nextSlot.subject_id === slot.subject_id) {
+              isLabBlock = true;
+              skipPeriods.add(nextPeriod.num);
+            }
+          }
+        }
+
+        if (!slot) {
+          cellsHtml += `<td class="period-cell" style="text-align: center;"><span class="schedule-empty">–</span></td>`;
+        } else {
+          const colorClass = getColorForSubject(slot.subject_name, slot.subject_code);
+          const facultyTooltip = slot.faculty_name ? `Faculty: ${slot.faculty_name}` : "";
+          const fullTitle = `${slot.subject_name}${facultyTooltip ? ' • ' + facultyTooltip : ''}`;
+          const colspanAttr = isLabBlock ? ` colspan="2"` : ``;
+          const labBadge = isLabBlock
+            ? `<span style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.5px;background:rgba(255,255,255,0.55);color:#1e3a5f;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle;">2hr LAB</span>`
+            : ``;
+          cellsHtml += `
+            <td class="period-cell"${colspanAttr}>
+              <div class="schedule-pill ${colorClass}">
+                <div class="pill-subject" title="${this.escapeHtml(fullTitle)}">${this.escapeHtml(slot.subject_name)}${labBadge}</div>
               </div>
             </td>
           `;
-        };
-
-        rowsHtml += `
-          <tr>
-            <td class="day-header-cell">${day}</td>
-            ${renderPeriodSlot(1)}
-            ${renderPeriodSlot(2)}
-            <td class="short-break-cell"><span class="break-vertical-badge short-badge">MORNING BREAK</span></td>
-            ${renderPeriodSlot(3)}
-            ${renderPeriodSlot(4)}
-            <td class="break-cell"><span class="break-vertical-badge lunch-badge">LUNCH BREAK</span></td>
-            ${renderPeriodSlot(5)}
-            ${renderPeriodSlot(6)}
-            <td class="short-break-cell"><span class="break-vertical-badge short-badge">TEA BREAK</span></td>
-            ${renderPeriodSlot(7)}
-            ${renderPeriodSlot(8)}
-          </tr>
-        `;
+        }
       });
-    }
+
+      rowsHtml += `
+        <tr>
+          <td class="saas-day-cell">${day}</td>
+          ${cellsHtml}
+        </tr>
+      `;
+    });
+
+    // Subjects in this class for the print legend
+    const classSubjects = (this.subjects || []).filter((s) => s.class_id === cls.id);
+    const legendRows = classSubjects.map((s) => {
+      const facName = s.faculty_name || "Dynamic Pool";
+      return `<tr>
+        <td style="font-weight:700;">${this.escapeHtml(s.code)}</td>
+        <td>${this.escapeHtml(s.name)}</td>
+        <td>${this.escapeHtml(facName)}</td>
+        <td style="text-align:center;">${s.periods_per_week} hrs/wk</td>
+      </tr>`;
+    }).join("");
 
     return `
-      <div class="timetable-card" id="timetable-card-${slotIndex}">
-        <div class="timetable-card-header">
-          <div class="timetable-card-left">
-            <span class="timetable-badge-pill ${badgeClass}">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
-              ${slotLabel}
-            </span>
-            <label class="sr-only" for="class-select-slot-${slotIndex}">Select Class</label>
-            <select id="class-select-slot-${slotIndex}" class="class-selector-dropdown" onchange="App.onClassChange(${slotIndex}, this)">
-              ${optionsHtml}
-            </select>
-            <span class="badge badge-info">${cls.subject_count || 0} Subjects • ${cls.total_weekly_periods || 0} Periods/Wk</span>
-          </div>
-          <div class="timetable-card-right">
-            <span class="badge badge-success">✓ 0 Conflicts Verified</span>
+      <div class="saas-table-card">
+        <!-- Printable Institution Header (Only rendered when printing) -->
+        <div class="print-only-banner">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #0f172a;padding-bottom:5px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="/static/images/info-logo.png" style="height:36px;width:auto;" alt="INFO Logo">
+              <div>
+                <div style="font-size:12pt;font-weight:800;letter-spacing:0.3px;color:#0f172a;line-height:1.1;">INFO INSTITUTE OF ENGINEERING</div>
+                <div style="font-size:6.5pt;color:#334155;font-weight:600;line-height:1.1;">(An Autonomous Institution | Approved by AICTE, New Delhi | Affiliated to Anna University, Chennai)</div>
+                <div style="font-size:7.5pt;color:#1e3a8a;font-weight:700;margin-top:1px;">DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <img src="/static/images/logo-anna-university.png" style="height:30px;width:auto;" alt="Anna Univ">
+              <img src="/static/images/logo-aicte.png" style="height:30px;width:auto;" alt="AICTE">
+              <img src="/static/images/logo-naac.png" style="height:30px;width:auto;" alt="NAAC">
+            </div>
           </div>
         </div>
-        <div class="table-responsive">
-          <table class="timetable-table">
+
+        <!-- Card Top Bar with Title, Badges, and Per-Card Print & Download CSV Buttons -->
+        <div class="timetable-card-top">
+          <div class="timetable-card-title-group">
+            <span class="timetable-card-title">${this.escapeHtml(cls.name)}</span>
+            <span class="timetable-card-code">${this.escapeHtml(cls.code)}</span>
+            <span class="timetable-card-meta">40 Periods · Full-Week Active</span>
+            ${slotLabel && this.viewMode === "dual" ? `<span style="font-size:11px;background:#f1f5f9;color:#475569;font-weight:700;padding:2px 8px;border-radius:4px;">${this.escapeHtml(slotLabel)}</span>` : ""}
+          </div>
+          <div class="timetable-card-actions">
+            <button class="btn btn-sm" onclick="App.printSingleTimetable(${cls.id})" title="Print this class timetable">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>Print</span>
+            </button>
+            <button class="btn btn-sm" onclick="App.downloadTimetableCsv(${cls.id})" title="Export CSV for this class">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll-wrapper">
+          <table class="saas-schedule-table">
             <thead>
               <tr>
-                <th>Day / Time</th>
-                <th>Period 1<span class="period-time">09:00 - 09:50</span></th>
-                <th>Period 2<span class="period-time">09:50 - 10:40</span></th>
-                <th class="short-break-col-header">Short Break<span class="period-time">10:40 - 10:50</span></th>
-                <th>Period 3<span class="period-time">10:50 - 11:40</span></th>
-                <th>Period 4<span class="period-time">11:40 - 12:30</span></th>
-                <th class="break-col-header">Lunch Break<span class="period-time">12:30 - 01:05</span></th>
-                <th>Period 5<span class="period-time">01:05 - 01:55</span></th>
-                <th>Period 6<span class="period-time">01:55 - 02:45</span></th>
-                <th class="short-break-col-header">Tea Break<span class="period-time">02:45 - 03:05</span></th>
-                <th>Period 7<span class="period-time">03:05 - 03:55</span></th>
-                <th>Period 8<span class="period-time">03:55 - 04:45</span></th>
+                <th style="padding-left: 10px; text-align: left;">Day / Time</th>
+                ${periods.map(p => p.isBreak
+                  ? `<th class="${p.breakType === 'lunch' ? 'lunch-col-header' : 'short-break-col-header'}">
+                      <div style="font-size:11px;font-weight:700;color:${p.breakType === 'lunch' ? '#b45309' : '#475569'};line-height:1.2;">${p.label}</div>
+                      <div style="font-size:9.5px;font-weight:500;color:#64748b;margin-top:2px;line-height:1.1;">${p.time}</div>
+                    </th>`
+                  : `<th>
+                      <div style="font-size:12px;font-weight:800;color:#0f172a;line-height:1.2;">Period ${p.num}</div>
+                      <div style="font-size:9.5px;font-weight:500;color:#64748b;margin-top:2px;line-height:1.1;">${p.time}</div>
+                    </th>`
+                ).join("")}
               </tr>
             </thead>
             <tbody>
               ${rowsHtml}
             </tbody>
           </table>
+        </div>
+
+        <!-- Course & Faculty Allocation Legend (Visible on Print) -->
+        <div class="print-legend-section">
+          <div style="font-weight:700;margin-bottom:3px;color:#0f172a;">Course & Faculty Allocation:</div>
+          <table>
+            <thead>
+              <tr style="background:#f1f5f9;font-weight:700;">
+                <th style="width:12%;">Code</th>
+                <th style="width:48%;">Subject Title</th>
+                <th style="width:28%;">Faculty In-Charge</th>
+                <th style="width:12%;text-align:center;">Hours / Week</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${legendRows || '<tr><td colspan="4" style="text-align:center;">No subjects allocated.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Formal University Signatures Block (Visible on Print) -->
+        <div class="print-signatures">
+          <div>Class Advisor / Tutor</div>
+          <div>Time Table Coordinator</div>
+          <div>Head of Department (HOD)</div>
+          <div>Principal</div>
         </div>
       </div>
     `;
@@ -338,6 +614,274 @@ const App = {
   // -------------------------------------------------------------------------
   // Faculty Management
   // -------------------------------------------------------------------------
+
+
+  // -------------------------------------------------------------------------
+  // Faculty Timetable Tab
+  // -------------------------------------------------------------------------
+
+  /** Populate the faculty dropdown and render if one is already selected. */
+  populateFacultyTimetableDropdown() {
+    const sel = document.getElementById("faculty-timetable-select");
+    if (!sel) return;
+    const prev = this.selectedFacultyId;
+    sel.innerHTML = '<option value="">— Select Faculty —</option>';
+    this.faculty.forEach((f) => {
+      const opt = document.createElement("option");
+      opt.value = f.id;
+      const wtype = f.work_type === "part_time" ? "Part-Time" : "Full-Time";
+      opt.textContent = `${f.name} (${wtype} · ${f.department})`;
+      if (f.id === prev) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  },
+
+  onFacultyTimetableChange(selectEl) {
+    const id = parseInt(selectEl.value, 10) || null;
+    this.selectedFacultyId = id;
+    this.renderFacultyTimetable();
+  },
+
+  async renderFacultyTimetable() {
+    this.populateFacultyTimetableDropdown();
+    const container = document.getElementById("faculty-timetable-container");
+    const infoBar   = document.getElementById("faculty-timetable-info");
+    const infoText  = document.getElementById("faculty-timetable-info-text");
+    if (!container) return;
+
+    if (!this.selectedFacultyId) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:3rem;color:var(--slate-500,#64748b);">
+          Select a faculty member above to view their weekly timetable.
+        </div>`;
+      if (infoBar) infoBar.style.display = "none";
+      return;
+    }
+
+    try {
+      const res  = await fetch(`/api/timetable/faculty/${this.selectedFacultyId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const fac  = data.faculty;
+      const grid = data.grid;
+
+      // Show part-time info bar
+      if (infoBar && infoText) {
+        const isPt = fac.work_type === "part_time";
+        infoBar.style.display = isPt ? "block" : "none";
+        infoText.textContent  = `Part-time faculty · Periods 1–4 only (09:00–12:30) · ${fac.assigned_periods} / ${fac.weekly_period_limit} periods assigned this week`;
+      }
+
+      container.innerHTML = this.buildFacultyTimetableHtml(fac, grid);
+    } catch (err) {
+      console.error("Faculty timetable fetch error:", err);
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:2rem;color:#ef4444;">
+          Failed to load faculty timetable. Please try again.
+        </div>`;
+    }
+  },
+
+  buildFacultyTimetableHtml(fac, grid) {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+    const getColorForSubject = (name, code) => {
+      const n = (name || "").toLowerCase();
+      const c = (code || "").toLowerCase();
+      if (n.includes("operating") || c.includes("os"))      return "pill-blue";
+      if (n.includes("discrete")  || c.includes("dm"))      return "pill-yellow";
+      if (n.includes("exploratory") || n.includes("eda") || c.includes("eda")) return "pill-purple";
+      if (n.includes("java")      || c.includes("java"))    return "pill-lavender";
+      if (n.includes("data structure") || c.includes("ds")) return "pill-blue-alt";
+      const palette = ["pill-blue","pill-yellow","pill-purple","pill-lavender","pill-blue-alt","pill-green","pill-pink","pill-teal","pill-peach"];
+      let hash = 0;
+      const str = name || code || "";
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return palette[Math.abs(hash) % palette.length];
+    };
+
+    // Build periods dynamically from config.py via API (with all 3 breaks)
+    const _pt = this.timetableData?.period_timings || {};
+    const _bt = this.timetableData?.break_timings  || {};
+    const _sb1 = _bt.short_break_1 || {};
+    const _lunch = _bt.lunch_break || {};
+    const _sb2 = _bt.short_break_2 || {};
+
+    const _sb1After = _sb1.after_period || 2;
+    const _sb1Time  = (_sb1.start || "10:40") + " – " + (_sb1.end || "10:50");
+    const _lunchAfter = _lunch.after_period || 4;
+    const _lunchTime  = (_lunch.start || "12:30") + " – " + (_lunch.end || "13:05");
+    const _sb2After = _sb2.after_period || 6;
+    const _sb2Time  = (_sb2.start || "14:45") + " – " + (_sb2.end || "15:05");
+
+    const periods = (() => {
+      const nums = Object.keys(_pt).map(Number).sort((a, b) => a - b);
+      const arr = [];
+      for (const num of nums) {
+        if (num === _sb1After + 1) {
+          arr.push({ isBreak: true, label: "Morning Break", time: _sb1Time, breakType: "short" });
+        }
+        if (num === _lunchAfter + 1) {
+          arr.push({ isBreak: true, label: "Lunch Break", time: _lunchTime, breakType: "lunch" });
+        }
+        if (num === _sb2After + 1) {
+          arr.push({ isBreak: true, label: "Tea Break", time: _sb2Time, breakType: "short" });
+        }
+        const t = _pt[num];
+        const label = t.label || (t.start + " – " + t.end);
+        arr.push({ num, time: label });
+      }
+      return arr;
+    })();
+
+    // Header row
+    let theadHtml = `<tr>
+      <th style="padding-left:20px;text-align:left;">Day / Time</th>`;
+    periods.forEach((p) => {
+      if (p.isBreak) {
+        theadHtml += `<th class="${p.breakType === 'lunch' ? 'lunch-col-header' : 'short-break-col-header'}">
+          <div style="font-size:11px;font-weight:700;color:${p.breakType === 'lunch' ? '#b45309' : '#475569'};line-height:1.2;">${p.label}</div>
+          <div style="font-size:9.5px;font-weight:500;color:#64748b;margin-top:2px;line-height:1.1;">${p.time}</div>
+        </th>`;
+      } else {
+        theadHtml += `<th>
+          <div style="font-size:12px;font-weight:800;color:#0f172a;line-height:1.2;">Period ${p.num}</div>
+          <div style="font-size:9.5px;font-weight:500;color:#64748b;margin-top:2px;line-height:1.1;">${p.time}</div>
+        </th>`;
+      }
+    });
+    theadHtml += `</tr>`;
+
+    // Body rows – one per day
+    let tbodyHtml = "";
+    const skipPeriods = new Set();
+
+    days.forEach((day, dayIdx) => {
+      const dayGrid = grid[day] || {};
+      skipPeriods.clear();
+      let cellsHtml = "";
+
+      periods.forEach((period, pidx) => {
+        if (period.isBreak) {
+          if (dayIdx === 0) {
+            const pillClass = period.breakType === "lunch" ? "pill-lunch" : "pill-break";
+            const cellClass = period.breakType === "lunch" ? "lunch-cell unified-break-cell" : "break-cell unified-break-cell";
+            cellsHtml += `
+              <td class="${cellClass}" rowspan="${days.length}">
+                <div class="${pillClass}">
+                  <span class="break-vertical-text">${period.label}</span>
+                </div>
+              </td>
+            `;
+          }
+          return;
+        }
+        if (skipPeriods.has(period.num)) return;
+
+        const slot = dayGrid[period.num];
+
+        // Lab merge detection
+        let isLabBlock = false;
+        if (slot && slot.subject_id) {
+          const nextP = periods[pidx + 1];
+          if (nextP && !nextP.isBreak) {
+            const nextSlot = dayGrid[nextP.num];
+            if (nextSlot && nextSlot.subject_id === slot.subject_id) {
+              isLabBlock = true;
+              skipPeriods.add(nextP.num);
+            }
+          }
+        }
+
+        if (!slot) {
+          cellsHtml += `<td class="period-cell" style="text-align:center;"><span class="schedule-empty">–</span></td>`;
+        } else {
+          const colorClass  = getColorForSubject(slot.subject_name, slot.subject_code);
+          const classLabel  = slot.class_name ? this.escapeHtml(slot.class_name) : "";
+          const colspanAttr = isLabBlock ? ` colspan="2"` : "";
+          const labBadge    = isLabBlock
+            ? `<span style="display:inline-block;font-size:9px;font-weight:700;background:rgba(255,255,255,0.45);color:#1e3a5f;border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;">2hr LAB</span>`
+            : "";
+          cellsHtml += `
+            <td class="period-cell"${colspanAttr}>
+              <div class="schedule-pill ${colorClass}">
+                <div class="pill-subject" title="${this.escapeHtml(slot.subject_name)}">${this.escapeHtml(slot.subject_name)}${labBadge}</div>
+                <div class="pill-sub" title="${classLabel}">${classLabel}</div>
+              </div>
+            </td>`;
+        }
+      });
+
+      tbodyHtml += `<tr><td class="saas-day-cell">${day}</td>${cellsHtml}</tr>`;
+    });
+
+    const isPt       = fac.work_type === "part_time";
+    const workLabel  = isPt ? "Part-Time · Periods 1–4" : "Full-Time · All Periods";
+    const badgeColor = isPt ? "#fef3c7;color:#92400e" : "#dcfce7;color:#166534";
+
+    return `
+      <div class="saas-table-card">
+        <!-- Printable Institution Header (Only rendered when printing) -->
+        <div class="print-only-banner">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #0f172a;padding-bottom:5px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="/static/images/info-logo.png" style="height:36px;width:auto;" alt="INFO Logo">
+              <div>
+                <div style="font-size:12pt;font-weight:800;letter-spacing:0.3px;color:#0f172a;line-height:1.1;">INFO INSTITUTE OF ENGINEERING</div>
+                <div style="font-size:6.5pt;color:#334155;font-weight:600;line-height:1.1;">(An Autonomous Institution | Approved by AICTE, New Delhi | Affiliated to Anna University, Chennai)</div>
+                <div style="font-size:7.5pt;color:#1e3a8a;font-weight:700;margin-top:1px;">DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <img src="/static/images/logo-anna-university.png" style="height:30px;width:auto;" alt="Anna Univ">
+              <img src="/static/images/logo-aicte.png" style="height:30px;width:auto;" alt="AICTE">
+              <img src="/static/images/logo-naac.png" style="height:30px;width:auto;" alt="NAAC">
+            </div>
+          </div>
+        </div>
+
+        <!-- Faculty Card Top Header with Actions -->
+        <div class="timetable-card-top">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+            <div>
+              <div style="font-weight:800;font-size:14.5px;color:#0f172a;">${this.escapeHtml(fac.name)}</div>
+              <div style="font-size:11.5px;color:#64748b;">${this.escapeHtml(fac.department || "")}</div>
+            </div>
+          </div>
+          <span style="font-size:11.5px;font-weight:600;background:${badgeColor};padding:3px 10px;border-radius:16px;">
+            ${workLabel}
+          </span>
+          <span style="font-size:11.5px;color:#64748b;font-weight:500;">
+            ${fac.assigned_periods} / ${fac.weekly_period_limit} periods/wk
+          </span>
+          <div class="timetable-card-actions" style="margin-left:auto;">
+            <button class="btn" onclick="App.printFacultyTimetable()" title="Print Faculty Timetable">
+              🖨️ Print
+            </button>
+            <button class="btn" onclick="App.downloadFacultyTimetableCsv(${fac.id})" title="Download CSV">
+              📥 CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll-wrapper">
+          <table class="saas-schedule-table">
+            <thead>${theadHtml}</thead>
+            <tbody>${tbodyHtml}</tbody>
+          </table>
+        </div>
+
+        <!-- Faculty Signatures on Print -->
+        <div class="print-signatures">
+          <div>Faculty Signature</div>
+          <div>Time Table Coordinator</div>
+          <div>Head of Department (HOD)</div>
+          <div>Principal</div>
+        </div>
+      </div>`;
+  },
+
   renderFacultyTable() {
     const tbody = document.getElementById("faculty-table-body");
     if (!tbody) return;
@@ -785,4 +1329,13 @@ const App = {
 // Start application when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   App.init();
+});
+
+
+// Global listener to dismiss dropdowns when clicking outside
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".dropdown-wrapper")) {
+    const menu = document.getElementById("timetable-download-dropdown");
+    if (menu) menu.style.display = "none";
+  }
 });

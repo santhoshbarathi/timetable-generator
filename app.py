@@ -8,7 +8,9 @@ automatic timetable regeneration on data mutations, and static web serving.
 
 import sqlite3
 from typing import Dict, Any, Tuple
-from flask import Flask, request, jsonify, render_template
+import csv
+import io
+from flask import Flask, request, jsonify, render_template, Response
 
 from config import (
     DEFAULT_PART_TIME_WEEKLY_PERIODS,
@@ -109,7 +111,9 @@ def get_config():
             "default_weekly_limit": MAX_FULL_TIME_WEEKLY_PERIODS
         },
         "period_timings": PERIOD_TIMINGS,
-        "break_timings": BREAK_TIMINGS
+        "break_timings": BREAK_TIMINGS,
+        "compulsory_faculty_hours": 16,
+        "zero_free_periods_policy": True
     })
 
 
@@ -600,6 +604,290 @@ def get_timetable():
         "break_timings": BREAK_TIMINGS,
         "days_of_week": DAYS_OF_WEEK,
     })
+
+
+
+
+@app.route("/api/timetable/faculty/<int:faculty_id>", methods=["GET"])
+def get_faculty_timetable(faculty_id: int):
+    """
+    Returns the weekly timetable grid for a single faculty member,
+    derived from the same timetable_entries table used by the class view.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verify faculty exists
+    cursor.execute("SELECT * FROM faculty WHERE id = ?;", (faculty_id,))
+    fac_row = cursor.fetchone()
+    if not fac_row:
+        conn.close()
+        return jsonify({"error": "Faculty member not found."}), 404
+    fac = dict(fac_row)
+
+    # Load this faculty's timetable entries (all classes)
+    cursor.execute("""
+        SELECT t.day, t.period_num,
+               s.name AS subject_name, s.code AS subject_code,
+               s.id   AS subject_id,
+               c.name AS class_name,  c.code AS class_code
+        FROM timetable_entries t
+        JOIN subjects s ON t.subject_id = s.id
+        JOIN classes  c ON t.class_id   = c.id
+        WHERE t.faculty_id = ?
+        ORDER BY t.day, t.period_num;
+    """, (faculty_id,))
+    entries = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+
+    # Build a day → period_num → slot dict
+    grid: Dict[str, Any] = {day: {} for day in DAYS_OF_WEEK}
+    for e in entries:
+        day = e["day"]
+        p   = e["period_num"]
+        if day in grid:
+            grid[day][p] = {
+                "period_num":   p,
+                "timing":       PERIOD_TIMINGS.get(p, {}),
+                "subject_id":   e["subject_id"],
+                "subject_name": e["subject_name"],
+                "subject_code": e["subject_code"],
+                "class_name":   e["class_name"],
+                "class_code":   e["class_code"],
+            }
+
+    return jsonify({
+        "faculty": {
+            "id":                fac["id"],
+            "name":              fac["name"],
+            "department":        fac["department"],
+            "work_type":         fac["work_type"],
+            "weekly_period_limit": fac["weekly_period_limit"],
+            "assigned_periods":  len(entries),
+        },
+        "grid":          grid,
+        "period_timings": PERIOD_TIMINGS,
+        "break_timings":  BREAK_TIMINGS,
+        "days_of_week":   DAYS_OF_WEEK,
+    })
+
+
+
+# ---------------------------------------------------------------------------
+# Export & Download Endpoints (CSV / Excel formatted timetable downloads)
+# ---------------------------------------------------------------------------
+@app.route("/api/export/timetable/csv", methods=["GET"])
+def export_timetable_csv():
+    """
+    Exports the generated timetable to a cleanly formatted CSV spreadsheet.
+    Supports single class (?class_id=X) or all classes (?all=true).
+    """
+    class_id = request.args.get("class_id", type=int)
+    export_all = request.args.get("all", "false").lower() in ("true", "1")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if class_id and not export_all:
+        cursor.execute("SELECT * FROM classes WHERE id = ?;", (class_id,))
+        classes = [dict(r) for r in cursor.fetchall()]
+        if not classes:
+            conn.close()
+            return jsonify({"error": "Class not found."}), 404
+    else:
+        cursor.execute("SELECT * FROM classes ORDER BY id;")
+        classes = [dict(r) for r in cursor.fetchall()]
+
+    cursor.execute("""
+        SELECT t.*, 
+               s.name AS subject_name, s.code AS subject_code,
+               f.name AS faculty_name
+        FROM timetable_entries t
+        JOIN subjects s ON t.subject_id = s.id
+        JOIN faculty f ON t.faculty_id = f.id
+        ORDER BY t.class_id, t.day, t.period_num;
+    """)
+    all_entries = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+
+    entries_by_class = {}
+    for e in all_entries:
+        cid = e["class_id"]
+        if cid not in entries_by_class:
+            entries_by_class[cid] = {}
+        day = e["day"]
+        if day not in entries_by_class[cid]:
+            entries_by_class[cid][day] = {}
+        entries_by_class[cid][day][e["period_num"]] = e
+
+    output = io.StringIO()
+    output.write("\ufeff")  # UTF-8 BOM for Microsoft Excel compatibility
+    writer = csv.writer(output)
+
+    for idx, c in enumerate(classes):
+        if idx > 0:
+            writer.writerow([])
+            writer.writerow(["=" * 80])
+            writer.writerow([])
+
+        writer.writerow(["INFO INSTITUTE OF ENGINEERING (Autonomous)"])
+        writer.writerow(["Approved by AICTE, New Delhi & Affiliated to Anna University, Chennai"])
+        writer.writerow(["DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING"])
+        writer.writerow([f"CLASS TIME TABLE: {c['name']} ({c['code']})"])
+        writer.writerow(["Academic Year: 2025-2026", "College Operating Window: 09:00 AM - 04:45 PM"])
+        writer.writerow([])
+
+        headers = [
+            "Day / Time",
+            f"Period 1 ({PERIOD_TIMINGS[1]['start']} - {PERIOD_TIMINGS[1]['end']})",
+            f"Period 2 ({PERIOD_TIMINGS[2]['start']} - {PERIOD_TIMINGS[2]['end']})",
+            "Morning Break (10:40 - 10:50)",
+            f"Period 3 ({PERIOD_TIMINGS[3]['start']} - {PERIOD_TIMINGS[3]['end']})",
+            f"Period 4 ({PERIOD_TIMINGS[4]['start']} - {PERIOD_TIMINGS[4]['end']})",
+            "Lunch Break (12:30 - 13:05)",
+            f"Period 5 ({PERIOD_TIMINGS[5]['start']} - {PERIOD_TIMINGS[5]['end']})",
+            f"Period 6 ({PERIOD_TIMINGS[6]['start']} - {PERIOD_TIMINGS[6]['end']})",
+            "Tea Break (14:45 - 15:05)",
+            f"Period 7 ({PERIOD_TIMINGS[7]['start']} - {PERIOD_TIMINGS[7]['end']})",
+            f"Period 8 ({PERIOD_TIMINGS[8]['start']} - {PERIOD_TIMINGS[8]['end']})",
+        ]
+        writer.writerow(headers)
+
+        c_entries = entries_by_class.get(c["id"], {})
+        for day in DAYS_OF_WEEK:
+            day_grid = c_entries.get(day, {})
+            row = [day]
+
+            # P1
+            e1 = day_grid.get(1)
+            row.append(f"{e1['subject_name']} [{e1['subject_code']}] ({e1['faculty_name']})" if e1 else "-")
+            # P2
+            e2 = day_grid.get(2)
+            row.append(f"{e2['subject_name']} [{e2['subject_code']}] ({e2['faculty_name']})" if e2 else "-")
+            # Morning Break
+            row.append("MORNING BREAK")
+            # P3
+            e3 = day_grid.get(3)
+            row.append(f"{e3['subject_name']} [{e3['subject_code']}] ({e3['faculty_name']})" if e3 else "-")
+            # P4
+            e4 = day_grid.get(4)
+            row.append(f"{e4['subject_name']} [{e4['subject_code']}] ({e4['faculty_name']})" if e4 else "-")
+            # Lunch Break
+            row.append("LUNCH BREAK")
+            # P5
+            e5 = day_grid.get(5)
+            row.append(f"{e5['subject_name']} [{e5['subject_code']}] ({e5['faculty_name']})" if e5 else "-")
+            # P6
+            e6 = day_grid.get(6)
+            row.append(f"{e6['subject_name']} [{e6['subject_code']}] ({e6['faculty_name']})" if e6 else "-")
+            # Tea Break
+            row.append("TEA BREAK")
+            # P7
+            e7 = day_grid.get(7)
+            row.append(f"{e7['subject_name']} [{e7['subject_code']}] ({e7['faculty_name']})" if e7 else "-")
+            # P8
+            e8 = day_grid.get(8)
+            row.append(f"{e8['subject_name']} [{e8['subject_code']}] ({e8['faculty_name']})" if e8 else "-")
+
+            writer.writerow(row)
+
+        writer.writerow([])
+        writer.writerow(["Time Table Coordinator", "", "", "HOD / CSE", "", "", "", "Principal"])
+
+    csv_data = output.getvalue()
+    filename = f"Timetable_{classes[0]['code']}.csv" if len(classes) == 1 else "All_Class_Timetables.csv"
+    return Response(
+        csv_data,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.route("/api/export/faculty/csv", methods=["GET"])
+def export_faculty_csv():
+    """
+    Exports an individual faculty member's weekly schedule as a CSV spreadsheet.
+    """
+    faculty_id = request.args.get("faculty_id", type=int)
+    if not faculty_id:
+        return jsonify({"error": "faculty_id parameter is required."}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM faculty WHERE id = ?;", (faculty_id,))
+    fac_row = cursor.fetchone()
+    if not fac_row:
+        conn.close()
+        return jsonify({"error": "Faculty member not found."}), 404
+    fac = dict(fac_row)
+
+    cursor.execute("""
+        SELECT t.day, t.period_num,
+               s.name AS subject_name, s.code AS subject_code,
+               c.name AS class_name,  c.code AS class_code
+        FROM timetable_entries t
+        JOIN subjects s ON t.subject_id = s.id
+        JOIN classes  c ON t.class_id   = c.id
+        WHERE t.faculty_id = ?
+        ORDER BY t.day, t.period_num;
+    """, (faculty_id,))
+    entries = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+
+    grid = {}
+    for e in entries:
+        grid.setdefault(e["day"], {})[e["period_num"]] = e
+
+    output = io.StringIO()
+    output.write("\ufeff")  # UTF-8 BOM
+    writer = csv.writer(output)
+
+    writer.writerow(["INFO INSTITUTE OF ENGINEERING (Autonomous)"])
+    writer.writerow(["FACULTY WEEKLY TEACHING SCHEDULE & LOAD ALLOCATION"])
+    writer.writerow([f"Faculty Name: {fac['name']}", f"Department: {fac['department']}"])
+    wtype = "Part-Time (09:00 AM - 12:30 PM, Periods 1-4)" if fac["work_type"] == "part_time" else "Full-Time (09:00 AM - 04:45 PM, All 8 Periods)"
+    writer.writerow([f"Work Type: {wtype}", f"Assigned Periods: {len(entries)} / {fac['weekly_period_limit']} periods/week"])
+    writer.writerow([])
+
+    headers = [
+        "Day / Time",
+        f"Period 1 ({PERIOD_TIMINGS[1]['start']} - {PERIOD_TIMINGS[1]['end']})",
+        f"Period 2 ({PERIOD_TIMINGS[2]['start']} - {PERIOD_TIMINGS[2]['end']})",
+        "Morning Break (10:40 - 10:50)",
+        f"Period 3 ({PERIOD_TIMINGS[3]['start']} - {PERIOD_TIMINGS[3]['end']})",
+        f"Period 4 ({PERIOD_TIMINGS[4]['start']} - {PERIOD_TIMINGS[4]['end']})",
+        "Lunch Break (12:30 - 13:05)",
+        f"Period 5 ({PERIOD_TIMINGS[5]['start']} - {PERIOD_TIMINGS[5]['end']})",
+        f"Period 6 ({PERIOD_TIMINGS[6]['start']} - {PERIOD_TIMINGS[6]['end']})",
+        "Tea Break (14:45 - 15:05)",
+        f"Period 7 ({PERIOD_TIMINGS[7]['start']} - {PERIOD_TIMINGS[7]['end']})",
+        f"Period 8 ({PERIOD_TIMINGS[8]['start']} - {PERIOD_TIMINGS[8]['end']})",
+    ]
+    writer.writerow(headers)
+
+    for day in DAYS_OF_WEEK:
+        day_grid = grid.get(day, {})
+        row = [day]
+        for p in range(1, 9):
+            if p == 3:
+                row.append("MORNING BREAK")
+            elif p == 5:
+                row.append("LUNCH BREAK")
+            elif p == 7:
+                row.append("TEA BREAK")
+            e = day_grid.get(p)
+            row.append(f"{e['subject_name']} - {e['class_code']}" if e else "-")
+        writer.writerow(row)
+
+    writer.writerow([])
+    writer.writerow(["Faculty Signature", "", "", "HOD / CSE", "", "", "", "Principal"])
+
+    safe_name = "".join(c for c in fac["name"] if c.isalnum() or c in (' ', '_')).rstrip().replace(' ', '_')
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=Faculty_Timetable_{safe_name}.csv"}
+    )
 
 
 @app.route("/api/timetable/regenerate", methods=["POST"])

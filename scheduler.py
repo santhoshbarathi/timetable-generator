@@ -16,6 +16,8 @@ Implements a Constraint Satisfaction Problem (CSP) solver with:
 import random
 from typing import Dict, List, Tuple, Optional, Any, Set
 from config import (
+    COMPULSORY_FACULTY_WEEKLY_HOURS,
+    ZERO_FREE_PERIODS_POLICY,
     DAYS_OF_WEEK,
     TOTAL_PERIODS_PER_DAY,
     PART_TIME_ALLOWED_PERIODS,
@@ -140,6 +142,11 @@ class TimetableScheduler:
                         f"Part-time faculty '{f['name']}' cannot teach {req_load} periods/week within the "
                         f"fixed half-day window (maximum theoretical capacity is {max_pt_possible} periods/week)."
                     )
+
+        # 3b. Verify compulsory 16 hours per week requirement
+        for f in faculty:
+            if f.get("weekly_period_limit") != COMPULSORY_FACULTY_WEEKLY_HOURS:
+                f["weekly_period_limit"] = COMPULSORY_FACULTY_WEEKLY_HOURS
 
         # 4. Total department faculty capacity vs total required periods
         total_required_periods = sum(s["periods_per_week"] for s in subjects)
