@@ -32,11 +32,17 @@ from database import init_db, seed_sample_data_if_empty, get_db_connection
 from scheduler import TimetableScheduler, SchedulingError
 from supabase import create_client, Client
 
-# Supabase Project Configuration & Client Setup
-SUPABASE_URL = "https://cxzeoddfvqomshlaegla.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4emVvZGRmdnFvbXNobGFlZ2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjg2MDEsImV4cCI6MjEwODYwNDYwMX0.3k5lcxEDNXzCF9wo5lGSvNafwwreeNGRZB_qDG98_YQ"
+import os
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Supabase Project Configuration & Client Setup (supports environment variables for hosting)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://cxzeoddfvqomshlaegla.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4emVvZGRmdnFvbXNobGFlZ2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjg2MDEsImV4cCI6MjEwODYwNDYwMX0.3k5lcxEDNXzCF9wo5lGSvNafwwreeNGRZB_qDG98_YQ")
+
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as _sb_err:
+    print(f"Supabase client initialization warning: {_sb_err}")
+    supabase = None
 
 app = Flask(__name__)
 
@@ -48,13 +54,16 @@ app = Flask(__name__)
 def setup_if_needed():
     """Ensure database exists and seeds sample data on the first request."""
     if not hasattr(app, "_db_initialized"):
-        init_db()
-        seeded = seed_sample_data_if_empty()
-        if seeded:
-            try:
-                TimetableScheduler().generate()
-            except Exception:
-                pass  # Seeded timetable will be regenerated on demand if needed
+        try:
+            init_db()
+            seeded = seed_sample_data_if_empty()
+            if seeded:
+                try:
+                    TimetableScheduler().generate()
+                except Exception as se:
+                    app.logger.warning(f"Initial scheduling note: {se}")
+        except Exception as e:
+            app.logger.error(f"Error in setup_if_needed: {e}")
         app._db_initialized = True
 
 
@@ -2265,16 +2274,28 @@ def method_not_allowed_handler(e):
 
 @app.errorhandler(500)
 def server_error_handler(e):
-    return jsonify({"error": "An internal server error occurred. Please verify your inputs."}), 500
+    import traceback
+    traceback.print_exc()
+    original_err = getattr(e, "original_exception", e)
+    app.logger.error(f"Internal Server Error (500): {original_err}")
+    return jsonify({
+        "error": "An internal server error occurred.",
+        "message": str(original_err)
+    }), 500
 
 
 if __name__ == "__main__":
-    # Local development server
-    init_db()
-    seed_sample_data_if_empty()
+    # Local & Cloud Server Execution
     try:
+        init_db()
+        seed_sample_data_if_empty()
         TimetableScheduler().generate()
-    except Exception:
-        pass
-    print("Intelligent Department Timetable Scheduler running at http://127.0.0.1:5000")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    except Exception as e:
+        print(f"Startup notice: {e}")
+
+    # Bind to host-assigned PORT (e.g. Render, Railway, Heroku) or default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1")
+    print(f"Intelligent Department Timetable Scheduler running at http://{host}:{port}")
+    app.run(host=host, port=port, debug=debug_mode)
