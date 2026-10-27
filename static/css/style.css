@@ -2513,6 +2513,26 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
   }
 
+  body.print-portrait {
+    font-size: 7pt !important;
+  }
+  body.print-portrait .saas-table th,
+  body.print-portrait .saas-table td {
+    padding: 3px 2px !important;
+    font-size: 6.5pt !important;
+  }
+  body.print-portrait .cell-subject-title {
+    font-size: 7pt !important;
+    line-height: 1.1 !important;
+  }
+  body.print-portrait .cell-faculty-name {
+    font-size: 6pt !important;
+  }
+  body.print-portrait .timetable-card-top {
+    margin-bottom: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
   /* Hide interactive web UI chrome */
   .saas-sidebar,
   .saas-topbar,

@@ -282,25 +282,64 @@ const App = {
     this.showToast("Timetable JSON exported successfully!", "success");
   },
 
+  pendingPrintAction: null,
+
+  showPrintModal(actionCallback) {
+    this.pendingPrintAction = actionCallback || (() => window.print());
+    const m = document.getElementById("modal-print-options");
+    if (m) {
+      m.style.display = "flex";
+    } else {
+      this.confirmPrint("landscape");
+    }
+  },
+
+  closePrintModal() {
+    const m = document.getElementById("modal-print-options");
+    if (m) m.style.display = "none";
+    this.pendingPrintAction = null;
+  },
+
+  confirmPrint(orientation) {
+    this.closePrintModal();
+    const styleId = "dynamic-print-orientation-style";
+    let s = document.getElementById(styleId);
+    if (!s) {
+      s = document.createElement("style");
+      s.id = styleId;
+      document.head.appendChild(s);
+    }
+    s.textContent = `@media print { @page { size: A4 ${orientation} !important; margin: ${orientation === "portrait" ? "6mm 6mm" : "6mm 8mm"} !important; } }`;
+
+    document.body.classList.toggle("print-portrait", orientation === "portrait");
+    document.body.classList.toggle("print-landscape", orientation === "landscape");
+
+    const action = this.pendingPrintAction || (() => window.print());
+    this.pendingPrintAction = null;
+    action();
+  },
+
   printTimetable() {
-    window.print();
+    this.showPrintModal(() => window.print());
   },
 
   printSingleTimetable(classId) {
-    const prevMode = this.viewMode;
-    const prevId = this.selectedClassId;
-    this.selectedClassId = classId;
-    this.selectedClassId1 = classId;
-    this.viewMode = "single";
-    this.renderTimetable();
-    setTimeout(() => {
-      window.print();
+    this.showPrintModal(() => {
+      const prevMode = this.viewMode;
+      const prevId = this.selectedClassId;
+      this.selectedClassId = classId;
+      this.selectedClassId1 = classId;
+      this.viewMode = "single";
+      this.renderTimetable();
       setTimeout(() => {
-        this.viewMode = prevMode;
-        this.selectedClassId = prevId;
-        this.renderTimetable();
-      }, 500);
-    }, 100);
+        window.print();
+        setTimeout(() => {
+          this.viewMode = prevMode;
+          this.selectedClassId = prevId;
+          this.renderTimetable();
+        }, 500);
+      }, 100);
+    });
   },
 
   printFacultyTimetable() {
@@ -308,7 +347,7 @@ const App = {
       this.showToast("Please select a faculty member first.", "warning");
       return;
     }
-    window.print();
+    this.showPrintModal(() => window.print());
   },
 
   // -------------------------------------------------------------------------
@@ -606,11 +645,6 @@ const App = {
                 <div style="font-size:6.5pt;color:#334155;font-weight:600;line-height:1.1;">(An Autonomous Institution | Approved by AICTE, New Delhi | Affiliated to Anna University, Chennai)</div>
                 <div style="font-size:7.5pt;color:#1e3a8a;font-weight:700;margin-top:1px;">DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</div>
               </div>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <img src="/static/images/logo-anna-university.png" style="height:30px;width:auto;" alt="Anna Univ">
-              <img src="/static/images/logo-aicte.png" style="height:30px;width:auto;" alt="AICTE">
-              <img src="/static/images/logo-naac.png" style="height:30px;width:auto;" alt="NAAC">
             </div>
           </div>
         </div>
@@ -954,11 +988,6 @@ const App = {
                 <div style="font-size:6.5pt;color:#334155;font-weight:600;line-height:1.1;">(An Autonomous Institution | Approved by AICTE, New Delhi | Affiliated to Anna University, Chennai)</div>
                 <div style="font-size:7.5pt;color:#1e3a8a;font-weight:700;margin-top:1px;">DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</div>
               </div>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <img src="/static/images/logo-anna-university.png" style="height:30px;width:auto;" alt="Anna Univ">
-              <img src="/static/images/logo-aicte.png" style="height:30px;width:auto;" alt="AICTE">
-              <img src="/static/images/logo-naac.png" style="height:30px;width:auto;" alt="NAAC">
             </div>
           </div>
         </div>
