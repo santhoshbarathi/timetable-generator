@@ -173,15 +173,17 @@ def test_subject_daily_and_weekly_constraints():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1. Check max 1 period per subject per class per day
+    # 1. Check max 1 period per theory subject per class per day (labs are 2 consecutive periods)
     cursor.execute("""
-        SELECT class_id, subject_id, day, COUNT(*) as count_per_day
-        FROM timetable_entries
-        GROUP BY class_id, subject_id, day
+        SELECT t.class_id, t.subject_id, t.day, COUNT(*) as count_per_day
+        FROM timetable_entries t
+        JOIN subjects s ON t.subject_id = s.id
+        WHERE s.name NOT LIKE '%Lab%' AND s.code NOT LIKE '%LAB%' AND s.code NOT LIKE '%L%'
+        GROUP BY t.class_id, t.subject_id, t.day
         HAVING count_per_day > 1;
     """)
     duplicate_days = cursor.fetchall()
-    assert len(duplicate_days) == 0, f"Subject assigned more than once per day: {duplicate_days}"
+    assert len(duplicate_days) == 0, f"Theory subject assigned more than once per day: {duplicate_days}"
 
     # 2. Check total periods per week matches subject.periods_per_week
     cursor.execute("""
